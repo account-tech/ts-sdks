@@ -1,7 +1,7 @@
 {
-  "name": "@account.tech/core",
+  "name": "@account.tech/multisig",
   "author": "Thouny <thouny@tuta.io>",
-  "description": "Core library for defining account sdks with account.tech",
+  "description": "Multisig Account SDK powered by account.tech",
   "version": "0.1.0",
   "license": "Apache-2.0",
   "files": [
@@ -13,12 +13,12 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
-    "build": "rm -rf dist/ && rm -rf tsconfig.tsbuildinfo && bun build:tsup",
+    "build": "rm -rf dist/ && rm -rf tsconfig.tsbuildinfo && bun build:tsup && bun build:types",
     "build:tsup": "tsup ./src/* --format esm,cjs --sourcemap",
     "build:types": "tsc --build"
   },
   "dependencies": {
-    "@account.tech/core": "file:../../ts-core",
+    "@account.tech/core": "^0.1.1",
     "@mysten/sui": "^1.24.0",
     "bun-types": "^1.0.25"
   },
