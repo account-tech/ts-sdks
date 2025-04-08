@@ -10,14 +10,12 @@ import { NETWORK, MULTISIG, testKeypair, executeTx } from "./utils";
     );
     const tx = new Transaction();
 
-    ms.requestMintAndTransfer(
+    ms.requestWithdrawAndTransferToVault(
         tx,
-        {key: "Mint and transfer"},
-        "0xfbf823f1aedf4de4f54508c8dceaf2c7cdfb6f7471a3f614bec079bba31f7e3c::coin::COIN",
-        [
-            { amount: BigInt(1000000000), recipient: "0x2b0228af0c0e13b24db3135a8c97295a53ff155ec651e35857eef70a696c8b4f"},
-            { amount: BigInt(20000000000), recipient: "0x2b0228af0c0e13b24db3135a8c97295a53ff155ec651e35857eef70a696c8b4f"},
-        ]
+        {key: "Withdraw and transfer to vault"},
+        "0x2::sui::SUI",
+        10n,
+        "chosen"
     );
     
     executeTx(tx);

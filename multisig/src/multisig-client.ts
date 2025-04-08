@@ -808,7 +808,7 @@ export class MultisigClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		const coinId = this.mergeAndSplit(tx, coinType, [coinAmount]);
+		const [coinId] = this.mergeAndSplit(tx, coinType, [coinAmount]);
 
 		WithdrawAndTransferToVaultIntent.prototype.request(
 			tx,
