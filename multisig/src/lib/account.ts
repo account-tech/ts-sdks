@@ -85,6 +85,8 @@ export class Multisig extends Account implements MultisigData {
             id: multisigAccount.id,
             metadata,
             deps,
+            unverifiedDepsAllowed: multisigAccount.deps.unverifiedAllowed,
+            lockedObjects: multisigAccount.intents.locked.contents,
             intentsBagId: multisigAccount.intents.inner.id,
             global,
             roles,
@@ -106,6 +108,8 @@ export class Multisig extends Account implements MultisigData {
         this.id = multisig.id;
         this.metadata = multisig.metadata;
         this.deps = multisig.deps;
+        this.unverifiedDepsAllowed = multisig.unverifiedDepsAllowed;
+        this.lockedObjects = multisig.lockedObjects;
         this.intentsBagId = multisig.intentsBagId;
         this.global = multisig.global;
         this.roles = multisig.roles;
@@ -117,6 +121,8 @@ export class Multisig extends Account implements MultisigData {
             id: this.id,
             metadata: this.metadata,
             deps: this.deps,
+            unverifiedDepsAllowed: this.unverifiedDepsAllowed,
+            lockedObjects: this.lockedObjects,
             intentsBagId: this.intentsBagId,
             global: this.global,
             roles: this.roles,

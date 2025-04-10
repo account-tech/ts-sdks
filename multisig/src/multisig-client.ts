@@ -21,6 +21,7 @@ import { Member, Threshold, MultisigData, DepStatus } from "./lib/types";
 import { Multisig } from "./lib/account";
 import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
+import { MOVE_STDLIB } from "@account.tech/core";
 
 export class MultisigClient extends AccountSDK {
 
@@ -362,11 +363,14 @@ export class MultisigClient extends AccountSDK {
 		coinType: string,
 		toSplit: bigint[], // amounts
 	): TransactionResult {
-		const coin = this.ownedObjects?.getCoin(coinType);
-		if (!coin || coin.amount < toSplit.reduce((acc, curr) => acc + curr, 0n)) throw new Error("Not enough coins");
+		const coins = this.ownedObjects?.getCoin(coinType);
+		const availableInstances = coins?.instances.filter(instance => !this.multisig.lockedObjects.includes(instance.ref.objectId));
+		if (!availableInstances || availableInstances.reduce((acc, curr) => acc + curr.amount, 0n) < toSplit.reduce((acc, curr) => acc + curr, 0n)) {
+			throw new Error("Not enough coins");
+		}
 
 		const auth = this.multisig.authenticate(tx);
-		return commands.mergeAndSplit(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, coin.ids.slice(0, 500), toSplit);
+		return commands.mergeAndSplit(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, availableInstances.map(instance => instance.ref).slice(0, 500), toSplit);
 	}
 
 	/// Deposits and locks a Cap object in the Account
@@ -808,7 +812,12 @@ export class MultisigClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		const [coinId] = this.mergeAndSplit(tx, coinType, [coinAmount]);
+		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]);
+		const coinId = tx.moveCall({
+			target: `${MOVE_STDLIB}::vector::swap_remove`,
+			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
+			arguments: [coinIds, tx.pure.u64(0)],
+		});
 
 		WithdrawAndTransferToVaultIntent.prototype.request(
 			tx,
@@ -836,10 +845,15 @@ export class MultisigClient extends AccountSDK {
 		let transfers: { objectId: TransactionPureInput, recipient: string }[] = objTransfers;
 
 		coinTransfers.forEach(transfer => {
-			const objectId = this.mergeAndSplit(tx, transfer.coinType, [transfer.coinAmount]);
+			const ids = this.mergeAndSplit(tx, transfer.coinType, [transfer.coinAmount]);
+			const objectId = tx.moveCall({
+				target: `${MOVE_STDLIB}::vector::swap_remove`,
+				typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
+				arguments: [ids, tx.pure.u64(0)],
+			});
 			transfers.push({ objectId, recipient: transfer.recipient });
 		});
-
+		
 		WithdrawAndTransferIntent.prototype.request(
 			tx,
 			MULTISIG_GENERICS,
