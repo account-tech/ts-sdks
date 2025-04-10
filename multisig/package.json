@@ -2,7 +2,7 @@
   "name": "@account.tech/multisig",
   "author": "Thouny <thouny@tuta.io>",
   "description": "Multisig Account SDK powered by account.tech",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "license": "Apache-2.0",
   "files": [
     "dist"
@@ -18,8 +18,8 @@
     "build:types": "tsc --build"
   },
   "dependencies": {
-    "@account.tech/core": "^0.1.3",
-    "@mysten/sui": "^1.24.0",
+    "@account.tech/core": "^0.1.4",
+    "@mysten/sui": "^1.26.1",
     "bun-types": "^1.0.25"
   },
   "devDependencies": {

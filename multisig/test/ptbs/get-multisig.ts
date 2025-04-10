@@ -1,4 +1,4 @@
-import { MultisigClient } from "../../src/multisig-client";
+import { MultisigClient } from "@account.tech/multisig";
 import { MULTISIG, NETWORK, testKeypair } from "./utils";
 
 (async () => {
