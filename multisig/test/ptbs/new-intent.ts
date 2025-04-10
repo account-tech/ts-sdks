@@ -12,10 +12,10 @@ import { NETWORK, MULTISIG, testKeypair, executeTx } from "./utils";
 
     ms.requestWithdrawAndTransferToVault(
         tx,
-        {key: "Withdraw and transfer to vault"},
+        {key: "Withdraw and transfer to vault yk"},
         "0x2::sui::SUI",
         10n,
-        "chosen"
+        "Investment"
     );
     
     executeTx(tx);

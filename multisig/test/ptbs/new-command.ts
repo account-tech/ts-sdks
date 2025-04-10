@@ -17,9 +17,9 @@ import { executeTx, MULTISIG, NETWORK, testKeypair } from "./utils";
     // ms.modifyName(tx, "New Name");
     // ms.depositTreasuryCap(tx, "0xfbf823f1aedf4de4f54508c8dceaf2c7cdfb6f7471a3f614bec079bba31f7e3c::coin::COIN", "0x062c12fb7dc4ba81a314b1acd9dd4f0d19e21e777a690c24b965bb8a7d7c7ab6");
     // ms.openKiosk(tx, "Degen");
-    ms.placeInKiosk(tx, "0x4f6158db4544fe52bd07dbd4568f3ac2ef81068c85cf0b54cca0282a7fe231b2::nft::Nft", "0x8e7706875b9d6cb37f477ca8218999d33c5820b3f2113fd2743dea53ccc96738", "0xc829373e317fe146cacbe44c186a210695e3870a941e104d2f9cb36dbec680b4", "Degen", "0x3a1f86f97f2622769a5ca881a83b5395795e81390a7e566095dcb82ff853a397");
+    // ms.placeInKiosk(tx, "0x4f6158db4544fe52bd07dbd4568f3ac2ef81068c85cf0b54cca0282a7fe231b2::nft::Nft", "0x8e7706875b9d6cb37f477ca8218999d33c5820b3f2113fd2743dea53ccc96738", "0xc829373e317fe146cacbe44c186a210695e3870a941e104d2f9cb36dbec680b4", "Degen", "0x3a1f86f97f2622769a5ca881a83b5395795e81390a7e566095dcb82ff853a397");
     // TODO: test kiosk commands
-    // ms.openVault(tx, "Investment");
+    ms.openVault(tx, "Empty");
     // const coin = tx.splitCoins(tx.gas, [100000000]);
     // ms.depositFromWallet(tx, "0x2::sui::SUI", "Investment", coin);
     // ms.depositUpgradeCap(tx, "TestPackage", "0x29d8954730ba29c0b66534c60fc121bd14771639d0f502d1cddc85473943fd7f");
