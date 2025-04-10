@@ -1,19 +1,19 @@
 export enum ACCOUNT_MULTISIG {
-    V1 = "0x86d6c90d7c6aafa3dcde015b9651cbd5754c8299c3881a67a37ba6f5e09e277a",
+    V1 = "0x5dc85f69022101e075affe09af643b8bdd99c50fd1e4611a3660621c5c63de6a",
 }
 // Types
 export const MULTISIG_CONFIG_TYPE = `${ACCOUNT_MULTISIG.V1}::multisig::Multisig`;
 export const MULTISIG_GENERICS: [string, string] = [`${ACCOUNT_MULTISIG.V1}::multisig::Multisig`, `${ACCOUNT_MULTISIG.V1}::multisig::Approvals`];
 // Shared objects
-export const MULTISIG_FEES = "0xa396313ecac3bcf0e1849ee336a8ff74b43d7071427daba95f83d12bc72900fa";
+export const MULTISIG_FEES = "0xc2d2fc347d1a2661b7ed13a216755fe9efaaf534390eee6099f91be412923ccc";
 
 // Payment
 export enum ACCOUNT_PAYMENT {
-    V1 = "0xc418f180bab4e29a1eef66676499e9aad4fda16ee72f95b8d5675a5e742f2b37",
+    V1 = "0x441919d12ddcce18f31e0d71ee9eda78ae2b89bfc722b0c9b9cc11fed78b497e",
 }
 // Types
 export const PAYMENT_CONFIG_TYPE = `${ACCOUNT_PAYMENT.V1}::payment::Payment`;
 export const PAYMENT_GENERICS: [string, string] = [`${ACCOUNT_PAYMENT.V1}::payment::Payment`, `${ACCOUNT_PAYMENT.V1}::payment::Pending`];
 // Shared objects
-export const PAYMENT_FEES = "0xf18870f08967b61f89d6484f4f4b4353f701dcc2ecc6373e842f2414caa379fa";
+export const PAYMENT_FEES = "0x4e9a9ff14455bd238a80fa6cd5cf15bc819a48d469df78de24b76c00cd6be6be";
 

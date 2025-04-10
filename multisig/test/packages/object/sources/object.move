@@ -20,6 +20,11 @@ public struct Hero has key, store {
 /// One-Time-Witness for the module.
 public struct MY_HERO has drop {}
 
+public struct Object has key, store {
+    id: UID,
+    value: u64,
+}
+
 /// Claim the `Publisher` object in the module initializer 
 /// to then create a `Display`. The `Display` is initialized with
 /// a set of fields (but can be modified later) and published via
@@ -66,11 +71,14 @@ fun init(otw: MY_HERO, ctx: &mut TxContext) {
     transfer::public_transfer(publisher, ctx.sender());
     transfer::public_transfer(display, ctx.sender());
 
-    mint_and_transfer(@0x3a386f5879c394008e3d53dffa2d9cdf3706cb18f179b7d14011e720908d4ac4, ctx);
-    mint_and_transfer(@0x3a386f5879c394008e3d53dffa2d9cdf3706cb18f179b7d14011e720908d4ac4, ctx);
-    mint_and_transfer(@0x3a386f5879c394008e3d53dffa2d9cdf3706cb18f179b7d14011e720908d4ac4, ctx);
-    mint_and_transfer(@0x3a386f5879c394008e3d53dffa2d9cdf3706cb18f179b7d14011e720908d4ac4, ctx);
-    mint_and_transfer(@0x3a386f5879c394008e3d53dffa2d9cdf3706cb18f179b7d14011e720908d4ac4, ctx);
+    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
+    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
+    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
+    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
+    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
+
+    transfer::public_transfer(Object {id: object::new(ctx), value: 90}, @0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599);
+    transfer::public_transfer(Object {id: object::new(ctx), value: 7}, @0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599);
 }
 
 /// Anyone can mint their `Hero`!

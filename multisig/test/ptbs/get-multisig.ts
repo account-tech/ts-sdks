@@ -1,4 +1,4 @@
-import { MultisigClient } from "@account.tech/multisig";
+import { MultisigClient } from "../../src/multisig-client";
 import { MULTISIG, NETWORK, testKeypair } from "./utils";
 
 (async () => {
@@ -7,5 +7,5 @@ import { MULTISIG, NETWORK, testKeypair } from "./utils";
         testKeypair.toSuiAddress(),
         MULTISIG
     )
-    console.log(ms.getIntent("Restrict"));
+    console.log(ms.ownedObjects);
 })();

@@ -7,7 +7,7 @@ public struct COIN has drop {}
 fun init(witness: COIN, ctx: &mut TxContext) {
     let (treasury_cap, metadata) = coin::create_currency<COIN>(witness, 9, b"COIN", b"Coin", b"This is a coin", option::none(), ctx);
     transfer::public_share_object(metadata);
-    transfer::public_transfer(treasury_cap, @0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161)
+    transfer::public_transfer(treasury_cap, @0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161);
 } 
 
 public fun mint(

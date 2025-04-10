@@ -1,15 +1,15 @@
 import * as package_source_1 from "../_dependencies/source/0x1/init";
 import * as package_source_2 from "../_dependencies/source/0x2/init";
-import * as package_source_2c137265d68d158493ba021f7c59913785fe524c6f19c22c8dea8e591a1d9c20 from "../_dependencies/source/0x2c137265d68d158493ba021f7c59913785fe524c6f19c22c8dea8e591a1d9c20/init";
-import * as package_source_86d6c90d7c6aafa3dcde015b9651cbd5754c8299c3881a67a37ba6f5e09e277a from "../account-multisig/init";
-import * as package_source_ee067c667ba529cfe69c2768a483b4269fa02eebacf69e0e69329c596873812c from "../account-protocol/init";
+import * as package_source_352d1a7f5e8564c8015317691511bc155817c7481deb1c66ee2615cfef41244e from "../_dependencies/source/0x352d1a7f5e8564c8015317691511bc155817c7481deb1c66ee2615cfef41244e/init";
+import * as package_source_5dc85f69022101e075affe09af643b8bdd99c50fd1e4611a3660621c5c63de6a from "../account-multisig/init";
+import * as package_source_5f7b38cbec63d97799d5b82f5231e030da5f5f0065282a63ab43cdde448d38a5 from "../account-protocol/init";
 import {StructClassLoader} from "./loader";
 
 function registerClassesSource(loader: StructClassLoader) { package_source_1.registerClasses(loader);
 package_source_2.registerClasses(loader);
-package_source_2c137265d68d158493ba021f7c59913785fe524c6f19c22c8dea8e591a1d9c20.registerClasses(loader);
-package_source_86d6c90d7c6aafa3dcde015b9651cbd5754c8299c3881a67a37ba6f5e09e277a.registerClasses(loader);
-package_source_ee067c667ba529cfe69c2768a483b4269fa02eebacf69e0e69329c596873812c.registerClasses(loader);
+package_source_352d1a7f5e8564c8015317691511bc155817c7481deb1c66ee2615cfef41244e.registerClasses(loader);
+package_source_5dc85f69022101e075affe09af643b8bdd99c50fd1e4611a3660621c5c63de6a.registerClasses(loader);
+package_source_5f7b38cbec63d97799d5b82f5231e030da5f5f0065282a63ab43cdde448d38a5.registerClasses(loader);
  }
 
 export function registerClasses(loader: StructClassLoader) { registerClassesSource(loader); }
