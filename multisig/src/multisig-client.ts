@@ -1,7 +1,7 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import {
 	Intent, OwnedData, AccountPreview, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes,
+	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes, Policy,
 } from "@account.tech/core";
 import {
 	BorrowCapIntent,
@@ -158,7 +158,7 @@ export class MultisigClient extends AccountSDK {
 		// not optimal, but we need to get the object types to execute the intent
 		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
 		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
-			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects);
+			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects!);
 		}
 
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
@@ -956,7 +956,7 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		intentArgs: IntentArgs,
 		packageName: string,
-		policy: number,
+		policy: typeof Policy[keyof typeof Policy],
 	): TransactionResult {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
