@@ -1,7 +1,7 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import {
 	Intent, OwnedData, AccountPreview, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile,
+	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes,
 } from "@account.tech/core";
 import {
 	BorrowCapIntent,
@@ -12,7 +12,7 @@ import {
 	SpendAndTransferIntent, SpendAndVestIntent,
 	ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
 } from "@account.tech/core/dist/lib/intents";
-import { SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, TransactionPureInput } from "@account.tech/core/dist/types";
+import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/dist/types";
 import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
@@ -21,7 +21,6 @@ import { Member, Threshold, MultisigData, DepStatus } from "./lib/types";
 import { Multisig } from "./lib/account";
 import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
-import { MOVE_STDLIB } from "@account.tech/core";
 
 export class MultisigClient extends AccountSDK {
 
@@ -156,6 +155,11 @@ export class MultisigClient extends AccountSDK {
 	): TransactionResult {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
+		// not optimal, but we need to get the object types to execute the intent
+		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
+			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects);
+		}
 
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
 		const executable = this.multisig.executeIntent(tx, intentKey);
@@ -863,6 +867,36 @@ export class MultisigClient extends AccountSDK {
 			outcome,
 			{ transfers },
 		);
+
+		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+	}
+
+	// optimized version of withdrawAndTransfer for airdropping coins to multiple recipients
+	requestWithdrawAndAirdropCoins(
+		tx: Transaction,
+		intentArgs: IntentArgs,
+		coinType: string,
+		drops: {recipient: string, amount: bigint}[],
+	): TransactionResult {
+		const auth = this.multisig.authenticate(tx);
+		const params = Intent.createParams(tx, intentArgs);
+		const outcome = this.multisig.emptyApprovalsOutcome(tx);
+
+		const coinIds = this.mergeAndSplit(tx, coinType, drops.map(drop => drop.amount));
+		const recipients = drops.map(drop => drop.recipient);
+		
+		tx.moveCall({
+			target: `${ACCOUNT_ACTIONS.V1}::owned_intents::request_withdraw_and_transfer`,
+			typeArguments: MULTISIG_GENERICS,
+			arguments: [
+				auth,
+				tx.object(this.multisig.id),
+				params,
+				outcome,
+				coinIds,
+				tx.pure.vector("address", recipients),
+			],
+		});
 
 		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}

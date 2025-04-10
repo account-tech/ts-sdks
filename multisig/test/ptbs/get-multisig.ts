@@ -7,5 +7,5 @@ import { MULTISIG, NETWORK, testKeypair } from "./utils";
         testKeypair.toSuiAddress(),
         MULTISIG
     )
-    console.log(ms.intents?.intents);
+    console.log(ms.getIntent("Withdraw and airdrop").args);
 })();
