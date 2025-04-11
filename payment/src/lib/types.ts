@@ -30,7 +30,6 @@ export type ConfigPaymentArgs = {
 }
 
 export type PayArgs = {
-    paymentId: string;
     coinType: string;
     amount: bigint;
     issuedBy: string;

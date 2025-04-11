@@ -4,13 +4,12 @@ import { destroyEmptyIntent, confirmExecution } from "../.gen/account-protocol/a
 import { Payment as PaymentRaw } from "../.gen/account-payment/payment/structs";
 import { newAccount } from "../.gen/account-payment/payment/functions";
 import * as configPayment from "../.gen/account-payment/config/functions";
-import * as config from "../.gen/account-protocol/config/functions";
 import { approveIntent, disapproveIntent, executeIntent, authenticate, emptyOutcome, sendInvite, join, leave } from "../.gen/account-payment/payment/functions";
 import { destroyEmptyExpired } from "../.gen/account-protocol/intents/functions";
 import { DepFields } from "../.gen/account-protocol/deps/structs";
 import { Fees as FeesRaw } from "../.gen/account-payment/fees/structs";
 
-import { User, Account, Intent, Dep, ConfigDepsArgs, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK, TransactionPureInput } from "@account.tech/core";
+import { User, Account, Intent, Dep, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK, TransactionPureInput } from "@account.tech/core";
 import { MemberProfile, PaymentData, ConfigPaymentArgs } from "./types";
 import { PAYMENT_FEES, PAYMENT_GENERICS, PAYMENT_CONFIG_TYPE } from "./constants";
 
@@ -111,7 +110,6 @@ export class Payment extends Account implements PaymentData {
 
     newPaymentAccount(
         tx: Transaction,
-        coin: TransactionObjectInput,
     ): TransactionResult {
         return newAccount(
             tx,
@@ -183,7 +181,7 @@ export class Payment extends Account implements PaymentData {
 
     approveIntent(
         tx: Transaction,
-        key: string,
+        key: TransactionPureInput,
         account: TransactionObjectInput = this.id,
     ): TransactionResult {
         if (!account) {
@@ -257,82 +255,6 @@ export class Payment extends Account implements PaymentData {
 
         const expired = destroyEmptyIntent(tx, PAYMENT_GENERICS, { account, key: "config-payment" });
         configPayment.deleteConfigPayment(tx, expired);
-        return destroyEmptyExpired(tx, expired);
-    }
-
-    atomicToggleUnverifiedDepsAllowed(
-        tx: Transaction,
-        account: TransactionObjectInput,
-    ): TransactionResult {
-        const auth = this.authenticate(tx, account);
-        const params = Intent.createParams(tx, { key: "toggle-unverified-deps" });
-        const outcome = this.emptyApprovalsOutcome(tx);
-
-        config.requestToggleUnverifiedAllowed(
-            tx,
-            PAYMENT_GENERICS,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-            }
-        );
-
-        this.approveIntent(tx, "toggle-unverified-deps", account);
-        const executable = this.executeIntent(tx, "toggle-unverified-deps", account);
-        config.executeToggleUnverifiedAllowed(tx, PAYMENT_GENERICS, { executable, account });
-        confirmExecution(tx, PAYMENT_GENERICS, { account, executable });
-
-        const expired = destroyEmptyIntent(tx, PAYMENT_GENERICS, { account, key: "toggle-unverified-deps" });
-        config.deleteToggleUnverifiedAllowed(tx, expired);
-        return destroyEmptyExpired(tx, expired);
-    }
-
-    atomicConfigDeps(
-        tx: Transaction,
-        actionsArgs: ConfigDepsArgs,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-
-        const names: string[] = [];
-        const addresses: string[] = [];
-        const versions: bigint[] = [];
-        actionsArgs.deps.forEach((dep) => {
-            names.push(dep.name);
-            addresses.push(dep.addr);
-            versions.push(BigInt(dep.version));
-        });
-
-        const auth = this.authenticate(tx, account);
-        const params = Intent.createParams(tx, { key: "config-deps" });
-        const outcome = this.emptyApprovalsOutcome(tx);
-
-        config.requestConfigDeps(
-            tx,
-            PAYMENT_GENERICS,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-                extensions: EXTENSIONS,
-                names,
-                addresses,
-                versions,
-            }
-        );
-
-        this.approveIntent(tx, "config-deps", account);
-        const executable = this.executeIntent(tx, "config-deps", account);
-        config.executeConfigDeps(tx, PAYMENT_GENERICS, { executable, account });
-        confirmExecution(tx, PAYMENT_GENERICS, { account, executable });
-
-        const expired = destroyEmptyIntent(tx, PAYMENT_GENERICS, { account, key: "config-deps" });
-        config.deleteConfigDeps(tx, expired);
         return destroyEmptyExpired(tx, expired);
     }
 }

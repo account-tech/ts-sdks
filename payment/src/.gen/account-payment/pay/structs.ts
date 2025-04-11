@@ -1,3 +1,4 @@
+import {String} from "../../_dependencies/source/0x1/string/structs";
 import {PhantomReified, PhantomToTypeStr, PhantomTypeArgument, Reified, StructClass, ToField, ToPhantomTypeArgument, ToTypeStr, assertFieldsWithTypesArgsMatch, assertReifiedTypeArgsMatch, decodeFromFields, decodeFromFieldsWithTypes, decodeFromJSONField, extractType, phantom} from "../../_framework/reified";
 import {FieldsWithTypes, composeSuiType, compressSuiType, parseTypeName} from "../../_framework/util";
 import {PKG_V1} from "../index";
@@ -9,7 +10,7 @@ import {fromB64, fromHEX, toHEX} from "@mysten/sui/utils";
 
 export function isPayAction(type: string): boolean { type = compressSuiType(type); return type.startsWith(`${PKG_V1}::pay::PayAction` + '<'); }
 
-export interface PayActionFields<CoinType extends PhantomTypeArgument> { paymentId: ToField<"address">; amount: ToField<"u64">; issuedBy: ToField<"address"> }
+export interface PayActionFields<CoinType extends PhantomTypeArgument> { amount: ToField<"u64">; issuedBy: ToField<"address"> }
 
 export type PayActionReified<CoinType extends PhantomTypeArgument> = Reified< PayAction<CoinType>, PayActionFields<CoinType> >;
 
@@ -19,11 +20,11 @@ export class PayAction<CoinType extends PhantomTypeArgument> implements StructCl
 
  readonly $typeName = PayAction.$typeName; readonly $fullTypeName: `${typeof PKG_V1}::pay::PayAction<${PhantomToTypeStr<CoinType>}>`; readonly $typeArgs: [PhantomToTypeStr<CoinType>]; readonly $isPhantom = PayAction.$isPhantom;
 
- readonly paymentId: ToField<"address">; readonly amount: ToField<"u64">; readonly issuedBy: ToField<"address">
+ readonly amount: ToField<"u64">; readonly issuedBy: ToField<"address">
 
  private constructor(typeArgs: [PhantomToTypeStr<CoinType>], fields: PayActionFields<CoinType>, ) { this.$fullTypeName = composeSuiType( PayAction.$typeName, ...typeArgs ) as `${typeof PKG_V1}::pay::PayAction<${PhantomToTypeStr<CoinType>}>`; this.$typeArgs = typeArgs;
 
- this.paymentId = fields.paymentId;; this.amount = fields.amount;; this.issuedBy = fields.issuedBy; }
+ this.amount = fields.amount;; this.issuedBy = fields.issuedBy; }
 
  static reified<CoinType extends PhantomReified<PhantomTypeArgument>>( CoinType: CoinType ): PayActionReified<ToPhantomTypeArgument<CoinType>> { return { typeName: PayAction.$typeName, fullTypeName: composeSuiType( PayAction.$typeName, ...[extractType(CoinType)] ) as `${typeof PKG_V1}::pay::PayAction<${PhantomToTypeStr<ToPhantomTypeArgument<CoinType>>}>`, typeArgs: [ extractType(CoinType) ] as [PhantomToTypeStr<ToPhantomTypeArgument<CoinType>>], isPhantom: PayAction.$isPhantom, reifiedTypeArgs: [CoinType], fromFields: (fields: Record<string, any>) => PayAction.fromFields( CoinType, fields, ), fromFieldsWithTypes: (item: FieldsWithTypes) => PayAction.fromFieldsWithTypes( CoinType, item, ), fromBcs: (data: Uint8Array) => PayAction.fromBcs( CoinType, data, ), bcs: PayAction.bcs, fromJSONField: (field: any) => PayAction.fromJSONField( CoinType, field, ), fromJSON: (json: Record<string, any>) => PayAction.fromJSON( CoinType, json, ), fromSuiParsedData: (content: SuiParsedData) => PayAction.fromSuiParsedData( CoinType, content, ), fromSuiObjectData: (content: SuiObjectData) => PayAction.fromSuiObjectData( CoinType, content, ), fetch: async (client: SuiClient, id: string) => PayAction.fetch( client, CoinType, id, ), new: ( fields: PayActionFields<ToPhantomTypeArgument<CoinType>>, ) => { return new PayAction( [extractType(CoinType)], fields ) }, kind: "StructClassReified", } }
 
@@ -33,29 +34,29 @@ export class PayAction<CoinType extends PhantomTypeArgument> implements StructCl
 
  static get bcs() { return bcs.struct("PayAction", {
 
- payment_id: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), }), amount: bcs.u64(), issued_by: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), })
+ amount: bcs.u64(), issued_by: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), })
 
 }) };
 
- static fromFields<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, fields: Record<string, any> ): PayAction<ToPhantomTypeArgument<CoinType>> { return PayAction.reified( typeArg, ).new( { paymentId: decodeFromFields("address", fields.payment_id), amount: decodeFromFields("u64", fields.amount), issuedBy: decodeFromFields("address", fields.issued_by) } ) }
+ static fromFields<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, fields: Record<string, any> ): PayAction<ToPhantomTypeArgument<CoinType>> { return PayAction.reified( typeArg, ).new( { amount: decodeFromFields("u64", fields.amount), issuedBy: decodeFromFields("address", fields.issued_by) } ) }
 
  static fromFieldsWithTypes<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, item: FieldsWithTypes ): PayAction<ToPhantomTypeArgument<CoinType>> { if (!isPayAction(item.type)) { throw new Error("not a PayAction type");
 
  } assertFieldsWithTypesArgsMatch(item, [typeArg]);
 
- return PayAction.reified( typeArg, ).new( { paymentId: decodeFromFieldsWithTypes("address", item.fields.payment_id), amount: decodeFromFieldsWithTypes("u64", item.fields.amount), issuedBy: decodeFromFieldsWithTypes("address", item.fields.issued_by) } ) }
+ return PayAction.reified( typeArg, ).new( { amount: decodeFromFieldsWithTypes("u64", item.fields.amount), issuedBy: decodeFromFieldsWithTypes("address", item.fields.issued_by) } ) }
 
  static fromBcs<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, data: Uint8Array ): PayAction<ToPhantomTypeArgument<CoinType>> { return PayAction.fromFields( typeArg, PayAction.bcs.parse(data) ) }
 
  toJSONField() { return {
 
- paymentId: this.paymentId,amount: this.amount.toString(),issuedBy: this.issuedBy,
+ amount: this.amount.toString(),issuedBy: this.issuedBy,
 
 } }
 
  toJSON() { return { $typeName: this.$typeName, $typeArgs: this.$typeArgs, ...this.toJSONField() } }
 
- static fromJSONField<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, field: any ): PayAction<ToPhantomTypeArgument<CoinType>> { return PayAction.reified( typeArg, ).new( { paymentId: decodeFromJSONField("address", field.paymentId), amount: decodeFromJSONField("u64", field.amount), issuedBy: decodeFromJSONField("address", field.issuedBy) } ) }
+ static fromJSONField<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, field: any ): PayAction<ToPhantomTypeArgument<CoinType>> { return PayAction.reified( typeArg, ).new( { amount: decodeFromJSONField("u64", field.amount), issuedBy: decodeFromJSONField("address", field.issuedBy) } ) }
 
  static fromJSON<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, json: Record<string, any> ): PayAction<ToPhantomTypeArgument<CoinType>> { if (json.$typeName !== PayAction.$typeName) { throw new Error("not a WithTwoGenerics json object") }; assertReifiedTypeArgsMatch( composeSuiType(PayAction.$typeName, extractType(typeArg)), json.$typeArgs, [typeArg], )
 
@@ -79,7 +80,7 @@ export class PayAction<CoinType extends PhantomTypeArgument> implements StructCl
 
 export function isPayEvent(type: string): boolean { type = compressSuiType(type); return type.startsWith(`${PKG_V1}::pay::PayEvent` + '<'); }
 
-export interface PayEventFields<CoinType extends PhantomTypeArgument> { paymentId: ToField<"address">; timestamp: ToField<"u64">; amount: ToField<"u64">; tips: ToField<"u64">; issuedBy: ToField<"address"> }
+export interface PayEventFields<CoinType extends PhantomTypeArgument> { paymentId: ToField<String>; timestamp: ToField<"u64">; amount: ToField<"u64">; tips: ToField<"u64">; issuedBy: ToField<"address"> }
 
 export type PayEventReified<CoinType extends PhantomTypeArgument> = Reified< PayEvent<CoinType>, PayEventFields<CoinType> >;
 
@@ -89,7 +90,7 @@ export class PayEvent<CoinType extends PhantomTypeArgument> implements StructCla
 
  readonly $typeName = PayEvent.$typeName; readonly $fullTypeName: `${typeof PKG_V1}::pay::PayEvent<${PhantomToTypeStr<CoinType>}>`; readonly $typeArgs: [PhantomToTypeStr<CoinType>]; readonly $isPhantom = PayEvent.$isPhantom;
 
- readonly paymentId: ToField<"address">; readonly timestamp: ToField<"u64">; readonly amount: ToField<"u64">; readonly tips: ToField<"u64">; readonly issuedBy: ToField<"address">
+ readonly paymentId: ToField<String>; readonly timestamp: ToField<"u64">; readonly amount: ToField<"u64">; readonly tips: ToField<"u64">; readonly issuedBy: ToField<"address">
 
  private constructor(typeArgs: [PhantomToTypeStr<CoinType>], fields: PayEventFields<CoinType>, ) { this.$fullTypeName = composeSuiType( PayEvent.$typeName, ...typeArgs ) as `${typeof PKG_V1}::pay::PayEvent<${PhantomToTypeStr<CoinType>}>`; this.$typeArgs = typeArgs;
 
@@ -103,17 +104,17 @@ export class PayEvent<CoinType extends PhantomTypeArgument> implements StructCla
 
  static get bcs() { return bcs.struct("PayEvent", {
 
- payment_id: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), }), timestamp: bcs.u64(), amount: bcs.u64(), tips: bcs.u64(), issued_by: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), })
+ payment_id: String.bcs, timestamp: bcs.u64(), amount: bcs.u64(), tips: bcs.u64(), issued_by: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), })
 
 }) };
 
- static fromFields<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, fields: Record<string, any> ): PayEvent<ToPhantomTypeArgument<CoinType>> { return PayEvent.reified( typeArg, ).new( { paymentId: decodeFromFields("address", fields.payment_id), timestamp: decodeFromFields("u64", fields.timestamp), amount: decodeFromFields("u64", fields.amount), tips: decodeFromFields("u64", fields.tips), issuedBy: decodeFromFields("address", fields.issued_by) } ) }
+ static fromFields<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, fields: Record<string, any> ): PayEvent<ToPhantomTypeArgument<CoinType>> { return PayEvent.reified( typeArg, ).new( { paymentId: decodeFromFields(String.reified(), fields.payment_id), timestamp: decodeFromFields("u64", fields.timestamp), amount: decodeFromFields("u64", fields.amount), tips: decodeFromFields("u64", fields.tips), issuedBy: decodeFromFields("address", fields.issued_by) } ) }
 
  static fromFieldsWithTypes<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, item: FieldsWithTypes ): PayEvent<ToPhantomTypeArgument<CoinType>> { if (!isPayEvent(item.type)) { throw new Error("not a PayEvent type");
 
  } assertFieldsWithTypesArgsMatch(item, [typeArg]);
 
- return PayEvent.reified( typeArg, ).new( { paymentId: decodeFromFieldsWithTypes("address", item.fields.payment_id), timestamp: decodeFromFieldsWithTypes("u64", item.fields.timestamp), amount: decodeFromFieldsWithTypes("u64", item.fields.amount), tips: decodeFromFieldsWithTypes("u64", item.fields.tips), issuedBy: decodeFromFieldsWithTypes("address", item.fields.issued_by) } ) }
+ return PayEvent.reified( typeArg, ).new( { paymentId: decodeFromFieldsWithTypes(String.reified(), item.fields.payment_id), timestamp: decodeFromFieldsWithTypes("u64", item.fields.timestamp), amount: decodeFromFieldsWithTypes("u64", item.fields.amount), tips: decodeFromFieldsWithTypes("u64", item.fields.tips), issuedBy: decodeFromFieldsWithTypes("address", item.fields.issued_by) } ) }
 
  static fromBcs<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, data: Uint8Array ): PayEvent<ToPhantomTypeArgument<CoinType>> { return PayEvent.fromFields( typeArg, PayEvent.bcs.parse(data) ) }
 
@@ -125,7 +126,7 @@ export class PayEvent<CoinType extends PhantomTypeArgument> implements StructCla
 
  toJSON() { return { $typeName: this.$typeName, $typeArgs: this.$typeArgs, ...this.toJSONField() } }
 
- static fromJSONField<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, field: any ): PayEvent<ToPhantomTypeArgument<CoinType>> { return PayEvent.reified( typeArg, ).new( { paymentId: decodeFromJSONField("address", field.paymentId), timestamp: decodeFromJSONField("u64", field.timestamp), amount: decodeFromJSONField("u64", field.amount), tips: decodeFromJSONField("u64", field.tips), issuedBy: decodeFromJSONField("address", field.issuedBy) } ) }
+ static fromJSONField<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, field: any ): PayEvent<ToPhantomTypeArgument<CoinType>> { return PayEvent.reified( typeArg, ).new( { paymentId: decodeFromJSONField(String.reified(), field.paymentId), timestamp: decodeFromJSONField("u64", field.timestamp), amount: decodeFromJSONField("u64", field.amount), tips: decodeFromJSONField("u64", field.tips), issuedBy: decodeFromJSONField("address", field.issuedBy) } ) }
 
  static fromJSON<CoinType extends PhantomReified<PhantomTypeArgument>>( typeArg: CoinType, json: Record<string, any> ): PayEvent<ToPhantomTypeArgument<CoinType>> { if (json.$typeName !== PayEvent.$typeName) { throw new Error("not a WithTwoGenerics json object") }; assertReifiedTypeArgsMatch( composeSuiType(PayEvent.$typeName, extractType(typeArg)), json.$typeArgs, [typeArg], )
 

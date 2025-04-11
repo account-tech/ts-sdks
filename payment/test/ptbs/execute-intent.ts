@@ -1,16 +1,16 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { MultisigClient } from "../../src/multisig-client";
-import { executeTx, NETWORK, MULTISIG, testKeypair } from "./utils";
+import { PaymentClient } from "../../src/payment-client";
+import { executeTx, NETWORK, testKeypair, ACCOUNT } from "./utils";
 
 (async () => {
-    const ms = await MultisigClient.init(
+    const paymentClient = await PaymentClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
-        MULTISIG,
+        ACCOUNT
     );
 
     const tx = new Transaction();
-    ms.execute(tx, testKeypair.toSuiAddress(), "Deps");
+    paymentClient.execute(tx, "config");
 
     executeTx(tx);
 })();

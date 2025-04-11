@@ -132,7 +132,6 @@ export class PayIntent extends Intent {
         const payAction = PayAction.fromFieldsWithTypes(phantom(coinType), actions[0]);
 
         this.args = {
-            paymentId: payAction.paymentId,
             coinType,
             amount: payAction.amount,
             issuedBy: payAction.issuedBy,

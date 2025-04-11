@@ -1,43 +1,24 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { MultisigClient } from "../../src/multisig-client";
-import { NETWORK, MULTISIG, testKeypair, executeTx } from "./utils";
+import { PaymentClient } from "../../src/payment-client";
+import { NETWORK, ACCOUNT, testKeypair, executeTx } from "./utils";
 import { ACCOUNT_ACTIONS, ACCOUNT_PROTOCOL } from "@account.tech/core";
-import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
+import { ACCOUNT_PAYMENT } from "../../src/lib/constants";
 
 (async () => {
-    const ms = await MultisigClient.init(
+    const paymentClient = await PaymentClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
-        MULTISIG
+        ACCOUNT
     );
     const tx = new Transaction();
-
-    ms.requestConfigDeps(
+    
+    paymentClient.requestConfigPaymentAccount(
         tx,
-        {key: "Deps"},
+        { key: "config" },
         [
-            {
-                name: "AccountProtocol",
-                addr: ACCOUNT_PROTOCOL.V1,
-                version: 1
-            },
-            {
-                name: "AccountMultisig",
-                addr: ACCOUNT_MULTISIG.V1,
-                version: 1
-            },
-            {
-                name: "AccountActions",
-                addr: ACCOUNT_ACTIONS.V1,
-                version: 1
-            },
-            {
-                name: "ExternalTest",
-                addr: "0x0",
-                version: 1
-            }
+            { address: testKeypair.toSuiAddress(), roles: [] },
         ]
     );
-    
+
     executeTx(tx);
 })();
