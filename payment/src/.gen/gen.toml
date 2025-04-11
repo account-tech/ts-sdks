@@ -8,4 +8,4 @@ rpc = "https://rpc-testnet.suiscan.xyz:443"
 [packages]
 # AccountMultisig = { git = "https://github.com/account-tech/move-registry.git", subdir = "packages/multisig", rev = "testnet" }
 AccountProtocol = { local = "../../../../move-framework/packages/protocol" }
-AccountMultisig = { local = "../../../../move-registry/packages/multisig" }
+AccountPayment = { local = "../../../../move-registry/packages/payment" }

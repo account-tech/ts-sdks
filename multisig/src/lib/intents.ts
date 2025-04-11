@@ -1,5 +1,5 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
-import * as multisig from "../.gen/account-multisig/config/functions";
+import * as config from "../.gen/account-multisig/config/functions";
 import * as accountProtocol from "../.gen/account-protocol/account/functions";
 import * as intents from "../.gen/account-protocol/intents/functions";
 import { ConfigMultisigAction } from "../.gen/account-multisig/config/structs";
@@ -62,7 +62,7 @@ export class ConfigMultisigIntent extends Intent {
             });
         }
 
-        return multisig.requestConfigMultisig(
+        return config.requestConfigMultisig(
             tx,
             {
                 auth,
@@ -84,7 +84,7 @@ export class ConfigMultisigIntent extends Intent {
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
         executable: TransactionObjectInput,
     ): TransactionResult {
-        return multisig.executeConfigMultisig(
+        return config.executeConfigMultisig(
             tx,
             {
                 executable,
@@ -107,7 +107,7 @@ export class ConfigMultisigIntent extends Intent {
                 key,
             }
         );
-        multisig.deleteConfigMultisig(
+        config.deleteConfigMultisig(
             tx,
             expired
         );
@@ -132,7 +132,7 @@ export class ConfigMultisigIntent extends Intent {
                 clock: CLOCK,
             }
         );
-        multisig.deleteConfigMultisig(
+        config.deleteConfigMultisig(
             tx,
             expired
         );
