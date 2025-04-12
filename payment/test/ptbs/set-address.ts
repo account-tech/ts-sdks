@@ -12,12 +12,9 @@ import { ACCOUNT_PAYMENT } from "../../src/lib/constants";
     );
     const tx = new Transaction();
     
-    paymentClient.requestConfigPaymentAccount(
+    paymentClient.setOwnerAddress(
         tx,
-        { key: "config" },
-        [
-            { address: testKeypair.toSuiAddress(), roles: [] },
-        ]
+        testKeypair.toSuiAddress(),
     );
 
     executeTx(tx);

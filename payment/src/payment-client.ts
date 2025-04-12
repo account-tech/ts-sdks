@@ -8,7 +8,7 @@ import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
 import { PAYMENT_GENERICS, PAYMENT_CONFIG_TYPE } from "./lib/constants";
-import { Member, PaymentData, DepStatus, PaymentIntentTypes } from "./lib/types";
+import { Member, PaymentData, DepStatus, IntentTypes, Roles } from "./lib/types";
 import { Payment } from "./lib/account";
 import { Pending } from "./lib/outcome";
 import { ConfigPaymentIntent, PayIntent } from "./lib/intents";
@@ -50,8 +50,8 @@ export class PaymentClient extends AccountSDK {
 	createPaymentAccount(
 		tx: Transaction,
 		name: string, // name of the payment account
+		newUser?: { username: string, profilePicture: string }, // must provide args if caller has no User object [USE PLACEHOLDER FOR NOW]
 		memberAddresses?: string[], // backup addresses if any
-		newUser?: { username: string, profilePicture: string }, // must provide args if caller has no User object
 	): TransactionResult {
 		// create the user if the user doesn't have one
 		let userId: TransactionPureInput = this.user.id;
@@ -71,16 +71,17 @@ export class PaymentClient extends AccountSDK {
 		const auth = this.paymentAccount.authenticate(tx, account);
 		commands.replaceMetadata(tx, PAYMENT_CONFIG_TYPE, auth, account, ["name"], [name]);
 		// update account rules if members are provided
+		let members: Member[] = [{ address: this.user.address!, roles: [Roles.Pay] }];
 		if (memberAddresses) {
-			const members = memberAddresses.map((address: string) => ({ address, weight: 1, roles: [] as string[] }));
-			members.push({ address: this.user.address!, weight: 1, roles: [PaymentIntentTypes.Pay] as string[] }); // add creator to the members
-
-			this.paymentAccount.atomicConfigPaymentAccount(
-				tx,
-				{ members },
-				account
-			); // atomic intent
+			members = members.concat(memberAddresses.map((address: string) => ({ address, roles: [] })));
 		}
+
+		this.paymentAccount.atomicConfigPaymentAccount(
+			tx,
+			{ members },
+			account
+		);
+
 		// creator register the account in his user
 		this.paymentAccount.joinPaymentAccount(tx, createdUser ? createdUser : userId, account);
 		// send invites to added members
@@ -272,6 +273,11 @@ export class PaymentClient extends AccountSDK {
 		return outcome.approved_by !== null;
 	}
 
+	getPendingPayments(): Record<string, Intent> {
+		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		return Object.fromEntries(Object.entries(this.intents?.intents ?? {}).filter(([_, intent]) => intent.constructor.type === IntentTypes.Pay));
+	}
+
 	getOwnedObjects(): OwnedData {
 		return this.ownedObjects?.getData() ?? {} as OwnedData;
 	}
@@ -314,26 +320,38 @@ export class PaymentClient extends AccountSDK {
 
 	// === Intents ===
 
-	requestConfigPaymentAccount(
+	/// Sets the recovery address using the owner address (user must sign with owner address)
+	setRecoveryAddress(
 		tx: Transaction,
-		intentArgs: IntentArgs,
-		members: Member[],
+		backupAddress: string,
 	): TransactionResult {
-		const auth = this.paymentAccount.authenticate(tx);
-		const params = Intent.createParams(tx, intentArgs);
-		const outcome = this.paymentAccount.emptyApprovalsOutcome(tx);
-
-		return ConfigPaymentIntent.prototype.request(
+		return this.paymentAccount.atomicConfigPaymentAccount(
 			tx,
-			PAYMENT_GENERICS,
-			auth,
-			this.paymentAccount.id,
-			params,
-			outcome,
-			{ members },
+			{
+				members: [
+					{ address: this.paymentAccount.members[0].address, roles: [IntentTypes.Pay] }, // no change
+					{ address: backupAddress, roles: [] }
+				]
+			},
+			this.paymentAccount.id
 		);
+	}
 
-		// return this.paymentAccount.approveIntent(tx, intentArgs.key, this.paymentAccount.id);
+	/// Sets the owner address using the backup address (user must sign with backup address)
+	setOwnerAddress(
+		tx: Transaction,
+		ownerAddress: string,
+	): TransactionResult {
+		return this.paymentAccount.atomicConfigPaymentAccount(
+			tx,
+			{
+				members: [
+					{ address: ownerAddress, roles: [IntentTypes.Pay] },
+					{ address: this.paymentAccount.members[1].address, roles: [] } // no change
+				]
+			},
+			this.paymentAccount.id
+		);
 	}
 
 	issuePayment(
@@ -362,11 +380,11 @@ export class PaymentClient extends AccountSDK {
 		return this.paymentAccount.approveIntent(tx, key, this.paymentAccount.id);
 	}
 
-	async makePayment(
+	makePayment(
 		tx: Transaction,
 		paymentId: string,
 		tipAmount?: bigint,
-	): Promise<TransactionResult> {
+	): TransactionResult {
 		const intent = this.getIntent(paymentId) as PayIntent;
 		if (!intent) throw new Error("Intent not found");
 

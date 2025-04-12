@@ -9,9 +9,15 @@ export type DepStatus = {
     latestVersion: number;
 }
 
-export const PaymentIntentTypes = {
+export const IntentTypes = {
     ConfigPayment: `${ACCOUNT_PAYMENT.V1.slice(2)}::config::ConfigPaymentIntent`,
     Pay: `${ACCOUNT_PAYMENT.V1.slice(2)}::pay::PayIntent`,
+    // add more
+} as const;
+
+export const Roles = {
+    Pay: `${ACCOUNT_PAYMENT.V1.slice(2)}::pay`,
+    // add more
 } as const;
 
 export type PaymentData = AccountData & {

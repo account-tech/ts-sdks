@@ -12,11 +12,8 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
 
     paymentClient.createPaymentAccount(
         tx,
-        "Shop",
-        undefined,
-        // ["0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c"],
-        { username: "Thouny", profilePicture: "https://example.com/avatar.png" },
-        // 2
+        "MyShop", // dynamic input
+        { username: "", profilePicture: "" },
     );
 
     executeTx(tx);

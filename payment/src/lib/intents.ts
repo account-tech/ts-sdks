@@ -6,13 +6,13 @@ import * as intents from "../.gen/account-protocol/intents/functions";
 import { ConfigPaymentAction } from "../.gen/account-payment/config/structs";
 import { PayAction } from "../.gen/account-payment/pay/structs";
 
-import { ConfigPaymentArgs, PayArgs, PaymentIntentTypes } from "./types";
+import { ConfigPaymentArgs, PayArgs, IntentTypes } from "./types";
 import { Intent, CLOCK } from "@account.tech/core";
 import { phantom } from "src/.gen/_framework/reified";
 import { PAYMENT_FEES } from "./constants";
 
 export class ConfigPaymentIntent extends Intent {
-    static type = PaymentIntentTypes.ConfigPayment;
+    static type = IntentTypes.ConfigPayment;
     declare args: ConfigPaymentArgs;
 
     async init() {
@@ -123,7 +123,7 @@ export class ConfigPaymentIntent extends Intent {
 }
 
 export class PayIntent extends Intent {
-    static type = PaymentIntentTypes.Pay;
+    static type = IntentTypes.Pay;
     declare args: PayArgs;
 
     async init() {

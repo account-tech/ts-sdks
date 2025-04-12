@@ -5,7 +5,11 @@ import { ACCOUNT, NETWORK, testKeypair } from "./utils";
     const paymentClient = await PaymentClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
-        ACCOUNT
-    )
-    console.log(paymentClient.getIntent("config"));
+    );
+
+    const userAccounts = paymentClient.getUserPaymentAccounts(); // merchant accounts for this user
+    const accountId = userAccounts.find(a => a.name == "MyShop")?.id; // pick the one you want according to the name
+    await paymentClient.switchAccount(accountId);
+
+    console.log(paymentClient.paymentAccount);
 })();

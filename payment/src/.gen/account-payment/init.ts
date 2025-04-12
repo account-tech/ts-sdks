@@ -9,6 +9,7 @@ export function registerClasses(loader: StructClassLoader) { loader.register(con
 loader.register(config.ConfigPaymentIntent);
 loader.register(fees.AdminCap);
 loader.register(fees.Fees);
+loader.register(pay.IssueEvent);
 loader.register(pay.PayAction);
 loader.register(pay.PayEvent);
 loader.register(pay.PayIntent);
