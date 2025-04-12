@@ -839,23 +839,24 @@ export class MultisigClient extends AccountSDK {
 	requestWithdrawAndTransfer(
 		tx: Transaction,
 		intentArgs: IntentArgs,
-		coinTransfers: { coinType: string, coinAmount: bigint, recipient: string }[],
-		objTransfers: { objectId: string, recipient: string }[],
+		coins: { coinType: string, coinAmount: bigint }[],
+		objectIds: string[],
+		recipient: string,
 	): TransactionResult {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		let transfers: { objectId: TransactionPureInput, recipient: string }[] = objTransfers;
+		let transfers = objectIds.map(objectId => ({ objectId: tx.pure.id(objectId) as TransactionPureInput, recipient }));
 
-		coinTransfers.forEach(transfer => {
-			const ids = this.mergeAndSplit(tx, transfer.coinType, [transfer.coinAmount]);
+		coins.forEach(coin => {
+			const ids = this.mergeAndSplit(tx, coin.coinType, [coin.coinAmount]);
 			const objectId = tx.moveCall({
 				target: `${MOVE_STDLIB}::vector::swap_remove`,
 				typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
 				arguments: [ids, tx.pure.u64(0)],
 			});
-			transfers.push({ objectId, recipient: transfer.recipient });
+			transfers.push({ objectId, recipient });
 		});
 		
 		WithdrawAndTransferIntent.prototype.request(
@@ -866,6 +867,29 @@ export class MultisigClient extends AccountSDK {
 			params,
 			outcome,
 			{ transfers },
+		);
+
+		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+	}
+
+	// optimized version of withdrawAndTransfer for airdropping objects with same type to multiple recipients
+	requestWithdrawAndAirdropObjects(
+		tx: Transaction,
+		intentArgs: IntentArgs,
+		drops: {objectId: string, recipient: string}[],
+	): TransactionResult {
+		const auth = this.multisig.authenticate(tx);
+		const params = Intent.createParams(tx, intentArgs);
+		const outcome = this.multisig.emptyApprovalsOutcome(tx);
+
+		WithdrawAndTransferIntent.prototype.request(
+			tx,
+			MULTISIG_GENERICS,
+			auth,
+			this.multisig.id,
+			params,
+			outcome,
+			{ transfers: drops },
 		);
 
 		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);

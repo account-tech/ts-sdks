@@ -12,31 +12,19 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestConfigDeps(
+    ms.requestWithdrawAndAirdropObjects(
         tx,
-        {key: "Deps"},
+        {key: "airdrop-objects"},
         [
             {
-                name: "AccountProtocol",
-                addr: ACCOUNT_PROTOCOL.V1,
-                version: 1
+                objectId: "0x05512c281bedc823d25cb1f6547e8fa9b034b64d96afbc79b0ca5dc610d22725",
+                recipient: testKeypair.toSuiAddress(),
             },
             {
-                name: "AccountMultisig",
-                addr: ACCOUNT_MULTISIG.V1,
-                version: 1
+                objectId: "0xdb1a9dbea68c845f41a89a7685d2674474ddd3c8e0b7f40557cadd937fcb1b0c",
+                recipient: testKeypair.toSuiAddress(),
             },
-            {
-                name: "AccountActions",
-                addr: ACCOUNT_ACTIONS.V1,
-                version: 1
-            },
-            {
-                name: "ExternalTest",
-                addr: "0x0",
-                version: 1
-            }
-        ]
+        ],
     );
     
     executeTx(tx);

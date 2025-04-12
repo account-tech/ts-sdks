@@ -71,14 +71,14 @@ fun init(otw: MY_HERO, ctx: &mut TxContext) {
     transfer::public_transfer(publisher, ctx.sender());
     transfer::public_transfer(display, ctx.sender());
 
-    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
-    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
-    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
-    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
-    mint_and_transfer(@0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599, ctx);
+    mint_and_transfer(@0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25, ctx);
+    mint_and_transfer(@0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25, ctx);
+    mint_and_transfer(@0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25, ctx);
+    mint_and_transfer(@0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25, ctx);
+    mint_and_transfer(@0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25, ctx);
 
-    transfer::public_transfer(Object {id: object::new(ctx), value: 90}, @0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599);
-    transfer::public_transfer(Object {id: object::new(ctx), value: 7}, @0xf63ee464e8b1ba9ad416528a067fd9a0dbc414415d036490b7a5bd46db3dc599);
+    transfer::public_transfer(Object {id: object::new(ctx), value: 90}, @0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25);
+    transfer::public_transfer(Object {id: object::new(ctx), value: 7}, @0x5086584cbb5e3dcb8a84628f21c0ddba4da5ae83a5e137979e19af60610fcb25);
 }
 
 /// Anyone can mint their `Hero`!

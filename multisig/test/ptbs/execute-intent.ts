@@ -10,7 +10,7 @@ import { executeTx, NETWORK, MULTISIG, testKeypair } from "./utils";
     );
 
     const tx = new Transaction();
-    ms.execute(tx, testKeypair.toSuiAddress(), "Deps");
+    ms.execute(tx, testKeypair.toSuiAddress(), "airdrop-objects");
 
     executeTx(tx);
 })();
