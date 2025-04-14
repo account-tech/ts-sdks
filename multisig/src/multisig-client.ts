@@ -160,12 +160,15 @@ export class MultisigClient extends AccountSDK {
 		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
 			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects!);
 		}
+		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndVest) {
+			(intent as WithdrawAndVestIntent).initTypeById(this.ownedObjects!);
+		}
 
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
 		const executable = this.multisig.executeIntent(tx, intentKey);
 
-		let result;
-		result = intent.execute(tx, MULTISIG_GENERICS, executable);
+		let result = intent.execute(tx, MULTISIG_GENERICS, executable);
 		intent.completeExecution(tx, MULTISIG_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
@@ -938,7 +941,12 @@ export class MultisigClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		const coinId = this.mergeAndSplit(tx, coinType, [coinAmount]);
+		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]); 
+		const coinId = tx.moveCall({
+			target: `${MOVE_STDLIB}::vector::swap_remove`,
+			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
+			arguments: [coinIds, tx.pure.u64(0)],
+		});
 
 		WithdrawAndVestIntent.prototype.request(
 			tx,

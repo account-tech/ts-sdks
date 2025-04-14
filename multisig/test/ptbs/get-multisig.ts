@@ -7,5 +7,5 @@ import { MULTISIG, NETWORK, testKeypair } from "./utils";
         testKeypair.toSuiAddress(),
         MULTISIG
     )
-    console.log(ms.getIntent("wat").args);
+    console.log(ms.getIntent("vest-coin-objects"));
 })();

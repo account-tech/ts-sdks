@@ -12,19 +12,14 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestWithdrawAndAirdropObjects(
+    ms.requestWithdrawAndVest(
         tx,
-        {key: "airdrop-objects"},
-        [
-            {
-                objectId: "0x05512c281bedc823d25cb1f6547e8fa9b034b64d96afbc79b0ca5dc610d22725",
-                recipient: testKeypair.toSuiAddress(),
-            },
-            {
-                objectId: "0xdb1a9dbea68c845f41a89a7685d2674474ddd3c8e0b7f40557cadd937fcb1b0c",
-                recipient: testKeypair.toSuiAddress(),
-            },
-        ],
+        {key: "vest-coin-objects"},
+        "0x2::sui::SUI",
+        100n,
+        1744620096000n,
+        1744620196000n,
+        testKeypair.toSuiAddress(),
     );
     
     executeTx(tx);
