@@ -17,8 +17,7 @@ import { BorrowCapIntent } from "@account.tech/core";
     const intentKey = "borrow-cap";
     const tx = new Transaction();
     
-    const intent = ms.intents?.intents[intentKey] as BorrowCapIntent;
-    if (!intent) throw new Error("Intent not found");
+    const intent = ms.getIntent(intentKey) as BorrowCapIntent;
     // approve if necessary
     (intent.outcome as Approvals).maybeApprove(tx, testKeypair.toSuiAddress());
     
@@ -29,11 +28,11 @@ import { BorrowCapIntent } from "@account.tech/core";
     /* add your code using the cap here */
 
     // return the cap
-    intent.returnCap(tx, MULTISIG_GENERICS, tx.object(ms.multisig.id), executable, result);
+    intent.return(tx, MULTISIG_GENERICS, executable, result);
     intent.completeExecution(tx, MULTISIG_GENERICS, executable);
     // if no more executions scheduled after this one, destroy intent
     if (intent.fields.executionTimes.length == 1) {
-        intent.clearEmpty(tx, MULTISIG_GENERICS, ms.multisig.id, intentKey);
+        intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
     }
 
     executeTx(tx);

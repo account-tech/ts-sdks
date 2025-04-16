@@ -12,10 +12,11 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestBorrowCap(
+    ms.requestUpgradePackage(
         tx,
-        {key: "borrow-cap"},
-        "0x2::display::Display<0x4ac609fe6e1f82e568f49e2abd00944bf30790fb9446f9838aadfd619d56bef1::my_hero::Hero>",
+        {key: "upgrade-package-2", executionTimes: [BigInt(Math.floor(Date.now() + 1000))]},
+        "anotherTest",
+        [144, 134, 44, 16, 18, 52, 249, 248, 191, 49, 180, 111, 230, 42, 247, 7, 54, 152, 199, 129, 151, 192, 162, 135, 164, 40, 19, 174, 34, 122, 125, 214]
     );
     
     executeTx(tx);

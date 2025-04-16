@@ -172,7 +172,7 @@ export class MultisigClient extends AccountSDK {
 		intent.completeExecution(tx, MULTISIG_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, MULTISIG_GENERICS, this.multisig.id, intentKey);
+			result = intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
 		}
 		return result;
 	}
@@ -186,7 +186,7 @@ export class MultisigClient extends AccountSDK {
 		if (!intent) throw new Error("Intent not found");
 		if (!intent.hasExpired()) throw new Error("Intent has not expired");
 
-		intent.deleteExpired(tx, MULTISIG_GENERICS, this.multisig.id, intentKey);
+		intent.deleteExpired(tx, MULTISIG_GENERICS, intentKey);
 	}
 
 	acceptInvite(tx: Transaction, invite: TransactionObjectInput): TransactionResult {
@@ -275,6 +275,7 @@ export class MultisigClient extends AccountSDK {
 
 	getIntent(key: string): Intent {
 		const intent = this.intents?.intents[key];
+		console.log(intent);
 		if (!intent) throw new Error("Intent not found");
 		return intent;
 	}
@@ -508,9 +509,10 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		packageName: string,
 		upgradeCap: TransactionObjectInput,
+		timeLockDelayMs: bigint,
 	): TransactionResult {
 		const auth = this.multisig.authenticate(tx);
-		return commands.depositUpgradeCap(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, upgradeCap, packageName, 0);
+		return commands.depositUpgradeCap(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, upgradeCap, packageName, timeLockDelayMs);
 	}
 
 	/// Opens a Treasury in the Account

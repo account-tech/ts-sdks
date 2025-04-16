@@ -96,14 +96,13 @@ export class ConfigMultisigIntent extends Intent {
     clearEmpty(
         tx: Transaction,
         accountGenerics: [string, string],
-        account: TransactionObjectInput,
         key: string,
     ): TransactionResult {
         const expired = accountProtocol.destroyEmptyIntent(
             tx,
             accountGenerics,
             {
-                account,
+                account: this.account,
                 key,
             }
         );
@@ -120,14 +119,13 @@ export class ConfigMultisigIntent extends Intent {
     deleteExpired(
         tx: Transaction,
         accountGenerics: [string, string],
-        account: TransactionObjectInput,
         key: string,
     ): TransactionResult {
         const expired = accountProtocol.deleteExpiredIntent(
             tx,
             accountGenerics,
             {
-                account,
+                account: this.account,
                 key,
                 clock: CLOCK,
             }
