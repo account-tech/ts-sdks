@@ -12,14 +12,10 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestWithdrawAndVest(
+    ms.requestBorrowCap(
         tx,
-        {key: "vest-coin-objects"},
-        "0x2::sui::SUI",
-        100n,
-        1744620096000n,
-        1744620196000n,
-        testKeypair.toSuiAddress(),
+        {key: "borrow-cap"},
+        "0x2::display::Display<0x4ac609fe6e1f82e568f49e2abd00944bf30790fb9446f9838aadfd619d56bef1::my_hero::Hero>",
     );
     
     executeTx(tx);

@@ -10,7 +10,7 @@ import { executeTx, NETWORK, MULTISIG, testKeypair } from "./utils";
     );
 
     const tx = new Transaction();
-    ms.execute(tx, testKeypair.toSuiAddress(), "vest-coin-objects");
+    ms.execute(tx, testKeypair.toSuiAddress(), "borrow-cap");
 
     executeTx(tx);
 })();
