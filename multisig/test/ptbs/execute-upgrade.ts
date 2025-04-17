@@ -15,9 +15,9 @@ import { BorrowCapIntent, UpgradePackageIntent } from "@account.tech/core";
     );
 
     const intentKey = "upgrade-package-2";
-    const packageId = ms.getPackages().assets["anotherTest"].packageId;
     const tx = new Transaction();
-
+    
+    const packageId = ms.getPackages().assets["anotherTest"].packageId;
     const intent = ms.getIntent(intentKey) as UpgradePackageIntent;
     // approve if necessary
     (intent.outcome as Approvals).maybeApprove(tx, testKeypair.toSuiAddress());

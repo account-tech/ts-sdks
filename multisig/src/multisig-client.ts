@@ -1059,5 +1059,67 @@ export class MultisigClient extends AccountSDK {
 
 		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
+
+	/// === Custom executors ===
+
+	executeBorrowCap(
+		tx: Transaction,
+		caller: string,
+		intentKey: string,
+		useCap: (cap: TransactionObjectInput) => void,
+	): TransactionResult {
+		const intent = this.getIntent(intentKey) as BorrowCapIntent;
+		// approve if necessary
+		(intent.outcome as Approvals).maybeApprove(tx, caller);
+
+		// borrow the cap
+		const executable = this.multisig.executeIntent(tx, intentKey);
+		let cap = intent.execute(tx, MULTISIG_GENERICS, executable);
+
+		useCap(cap); // use the cap in your code here
+
+		// return the cap
+		intent.return(tx, MULTISIG_GENERICS, executable, cap);
+		let result = intent.completeExecution(tx, MULTISIG_GENERICS, executable);
+		// if no more executions scheduled after this one, destroy intent
+		if (intent.fields.executionTimes.length == 1) {
+			result = intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
+		}
+		return result;
+	}
+
+	executeUpgradePackage(
+		tx: Transaction,
+		caller: string,
+		intentKey: string,
+		packageId: string,
+		modules: string[],
+		dependencies: string[],
+	): TransactionResult {
+		const intent = this.getIntent(intentKey) as UpgradePackageIntent;
+		// approve if necessary
+		(intent.outcome as Approvals).maybeApprove(tx, caller);
+
+		// borrow the cap
+		const executable = this.multisig.executeIntent(tx, intentKey);
+		let ticket = intent.execute(tx, MULTISIG_GENERICS, executable);
+
+		// upgrade the package
+		const receipt = tx.upgrade({
+			modules,
+			dependencies,
+			package: packageId,
+			ticket,
+		});
+
+		// return the cap
+		intent.commit(tx, MULTISIG_GENERICS, executable, receipt);
+		let result = intent.completeExecution(tx, MULTISIG_GENERICS, executable);
+		// if no more executions scheduled after this one, destroy intent
+		if (intent.fields.executionTimes.length == 1) {
+			result = intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
+		}
+		return result;
+	}
 }
 
