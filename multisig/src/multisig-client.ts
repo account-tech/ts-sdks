@@ -17,7 +17,7 @@ import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
 import { MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./lib/constants"; 
-import { Member, Threshold, MultisigData, DepStatus } from "./lib/types";
+import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes } from "./lib/types";
 import { Multisig } from "./lib/account";
 import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
@@ -164,11 +164,24 @@ export class MultisigClient extends AccountSDK {
 		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndVest) {
 			(intent as WithdrawAndVestIntent).initTypeById(this.ownedObjects!);
 		}
-
+		
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
 		const executable = this.multisig.executeIntent(tx, intentKey);
-
+		
 		let result = intent.execute(tx, MULTISIG_GENERICS, executable);
+
+		// send invites to added members
+		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		if (intent.constructor.type === MultisigIntentTypes.ConfigMultisig) {
+			let currentMembers = this.multisig.members.map(member => member.address);
+			let newMembers = (intent as ConfigMultisigIntent).args.members!.map(member => member.address);
+			// Find addresses of added members
+			const addedMembers = newMembers.filter(address => !currentMembers.includes(address));
+			if (addedMembers.length > 0) {
+				addedMembers.forEach(address => { this.multisig.sendInvite(tx, address, this.multisig.id) });
+			}
+		}
+
 		intent.completeExecution(tx, MULTISIG_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {

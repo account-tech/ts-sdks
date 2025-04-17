@@ -12,11 +12,23 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestUpgradePackage(
+    ms.requestConfigMultisig(
         tx,
-        {key: "upgrade-package-2", executionTimes: [BigInt(Math.floor(Date.now() + 1000))]},
-        "anotherTest",
-        [144, 134, 44, 16, 18, 52, 249, 248, 191, 49, 180, 111, 230, 42, 247, 7, 54, 152, 199, 129, 151, 192, 162, 135, 164, 40, 19, 174, 34, 122, 125, 214]
+        {key: "config-multisig" },
+        1,
+        [],
+        [
+            {
+                address: "0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161",
+                weight: 1,
+                roles: []
+            },
+            {
+                address: "0x08e133f696af486466f3b95b677448a7f00fa1e0236443348ed22eb0506d7622",
+                weight: 1,
+                roles: []
+            },
+        ]
     );
     
     executeTx(tx);
