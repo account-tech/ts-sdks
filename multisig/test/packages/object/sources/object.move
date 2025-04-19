@@ -75,7 +75,9 @@ fun init(otw: MY_HERO, ctx: &mut TxContext) {
     mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
     mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
     mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
+    mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
 
+    transfer::public_transfer(Object {id: object::new(ctx), value: 90}, @0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c);
     transfer::public_transfer(Object {id: object::new(ctx), value: 90}, @0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c);
     transfer::public_transfer(Object {id: object::new(ctx), value: 7}, @0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c);
 }

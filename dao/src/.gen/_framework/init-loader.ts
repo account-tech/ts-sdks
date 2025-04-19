@@ -1,15 +1,15 @@
 import * as package_source_1 from "../_dependencies/source/0x1/init";
 import * as package_source_2 from "../_dependencies/source/0x2/init";
-import * as package_source_816b73e87c1862caf0b2db0ff090f34743014f015dc438531ae52bc0e7f1e387 from "../_dependencies/source/0x816b73e87c1862caf0b2db0ff090f34743014f015dc438531ae52bc0e7f1e387/init";
-import * as package_source_e0a321104fa859cc9dcf962ef62a32e93ca2b1d5e493eb2454050af5203cefc8 from "../account-dao/init";
-import * as package_source_531d84bc93b829669db33056e6bfaae9c31ca8627ced49699524707a80391d4f from "../account-protocol/init";
+import * as package_source_f1538cc0d2f1b655c3c3c1db081a840633d6a593d6102ccb80e88e5ea3d32733 from "../_dependencies/source/0xf1538cc0d2f1b655c3c3c1db081a840633d6a593d6102ccb80e88e5ea3d32733/init";
+import * as package_source_fd3987517eff09e8b165ae080703ca6921a953e239deccde90f71f4a783396b3 from "../_dependencies/source/0xfd3987517eff09e8b165ae080703ca6921a953e239deccde90f71f4a783396b3/init";
+import * as package_source_9b79b60a02c37c340ee81b9ab449038852a89c51bdee9d93da15f60959f36ca5 from "../account-dao/init";
 import {StructClassLoader} from "./loader";
 
 function registerClassesSource(loader: StructClassLoader) { package_source_1.registerClasses(loader);
 package_source_2.registerClasses(loader);
-package_source_531d84bc93b829669db33056e6bfaae9c31ca8627ced49699524707a80391d4f.registerClasses(loader);
-package_source_816b73e87c1862caf0b2db0ff090f34743014f015dc438531ae52bc0e7f1e387.registerClasses(loader);
-package_source_e0a321104fa859cc9dcf962ef62a32e93ca2b1d5e493eb2454050af5203cefc8.registerClasses(loader);
+package_source_9b79b60a02c37c340ee81b9ab449038852a89c51bdee9d93da15f60959f36ca5.registerClasses(loader);
+package_source_f1538cc0d2f1b655c3c3c1db081a840633d6a593d6102ccb80e88e5ea3d32733.registerClasses(loader);
+package_source_fd3987517eff09e8b165ae080703ca6921a953e239deccde90f71f4a783396b3.registerClasses(loader);
  }
 
 export function registerClasses(loader: StructClassLoader) { registerClassesSource(loader); }
