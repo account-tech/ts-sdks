@@ -1,122 +1,94 @@
 import { Transaction, TransactionArgument, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import { Account as AccountRaw } from "../.gen/account-protocol/account/structs";
 import { destroyEmptyIntent, confirmExecution } from "../.gen/account-protocol/account/functions";
-import { Multisig as MultisigRaw } from "../.gen/account-multisig/multisig/structs";
-import { newAccount } from "../.gen/account-multisig/multisig/functions";
-import * as configMultisig from "../.gen/account-multisig/config/functions";
 import * as config from "../.gen/account-protocol/config/functions";
-import { approveIntent, disapproveIntent, executeIntent, authenticate, emptyOutcome, sendInvite, join, leave } from "../.gen/account-multisig/multisig/functions";
 import { destroyEmptyExpired } from "../.gen/account-protocol/intents/functions";
 import { DepFields } from "../.gen/account-protocol/deps/structs";
-import { MemberFields, RoleFields } from "../.gen/account-multisig/multisig/structs";
-import { Fees as FeesRaw } from "../.gen/account-multisig/fees/structs";
 
 import { User, Account, Intent, Dep, ConfigDepsArgs, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK, TransactionPureInput } from "@account.tech/core";
-import { Role, MemberProfile, MultisigData, ConfigMultisigArgs } from "./types";
-import { MULTISIG_FEES, MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./constants";
+import { DAO_GENERICS, DAO_CONFIG_TYPE, ACCOUNT_DAO, DAO_REGISTRY } from "./constants";
+import { ConfigDaoArgs, DaoData } from "./types";
 
-export class Multisig extends Account implements MultisigData {
-    static type = MULTISIG_CONFIG_TYPE;
+export class Dao extends Account implements DaoData {
+    static type = DAO_CONFIG_TYPE;
 
-    global: Role = { threshold: 0, totalWeight: 0 };
-    roles: Record<string, Role> = {};
-    members: MemberProfile[] = [];
-    fees: bigint = 0n;
+    assetType: string = "";
+    authVotingPower: bigint = 0n;
+    unstakingCooldown: bigint = 0n;
+    votingRule: number = 0;
+    maxVotingPower: bigint = 0n;
+    minimumVotes: bigint = 0n;
+    votingQuorum: bigint = 0n;
 
     async init(id?: string): Promise<void> {
         if (id) {
             this.id = id;
             await this.refresh();
-        } else {
-            this.fees = await this.fetchFees();
         }
     }
 
-    async fetch(id: string = this.id): Promise<MultisigData> {
+    async fetch(id: string = this.id)/*: Promise<DaoData> */ {
         if (!id && !this.id) {
             throw new Error("No address provided to refresh multisig");
         }
 
-        const accountReified = AccountRaw.r(MultisigRaw.r);
-        const multisigAccount = await accountReified.fetch(this.client, id);
-
-        // get metadata
-        const metadata = multisigAccount.metadata.inner.contents.map((m: any) => ({ key: m.key, value: m.value }));
-
-        // get deps
-        const deps: Dep[] = multisigAccount.deps.inner.map((dep: DepFields) => {
-            return { name: dep.name, addr: dep.addr, version: Number(dep.version) };
+        const daoAccount = await this.client.getObject({
+            id: this.id,
+            options: { showContent: true },
         });
 
-        // get all members" data (from account and member)
-        const membersAddress: string[] = multisigAccount.config.members.map((member: MemberFields) => member.addr);
-        const members = await Promise.all(membersAddress.map(async address => {
-            const weight = multisigAccount.config.members.find((m: MemberFields) => m.addr == address)?.weight;
-            const roles = multisigAccount.config.members.find((m: MemberFields) => m.addr == address)?.roles.contents;
-            const user = await User.init(this.client, MULTISIG_CONFIG_TYPE);
-            const { username, avatar } = await user.fetchProfile(address);
-            return {
-                address,
-                username,
-                avatar, 
-                weight: Number(weight)!,
-                roles: roles!
-            }
-        }));
+        // // get metadata
+        // const metadata = multisigAccount.metadata.inner.contents.map((m: any) => ({ key: m.key, value: m.value }));
 
-        // calculate total weights
-        const globalWeight = members.reduce((acc, member) => acc + member.weight, 0);
-        // Calculate total weights for each role
-        const roleWeights: Record<string, number> = {};
-        members.forEach(member => {
-            member.roles.forEach(role => {
-                const currentWeight = roleWeights[role] || 0;
-                roleWeights[role] = currentWeight + member.weight;
-            });
-        });
-        // get thresholds
-        const global = { threshold: Number(multisigAccount.config.global), totalWeight: globalWeight };
-        const roles: Record<string, Role> = {};
-        multisigAccount.config.roles.forEach((role: RoleFields) => {
-            roles[role.name] = { threshold: Number(role.threshold), totalWeight: roleWeights[role.name] || 0 };
-        });
+        // // get deps
+        // const deps: Dep[] = multisigAccount.deps.inner.map((dep: DepFields) => {
+        //     return { name: dep.name, addr: dep.addr, version: Number(dep.version) };
+        // });
 
-        return {
-            id: multisigAccount.id,
-            metadata,
-            deps,
-            unverifiedDepsAllowed: multisigAccount.deps.unverifiedAllowed,
-            lockedObjects: multisigAccount.intents.locked.contents,
-            intentsBagId: multisigAccount.intents.inner.id,
-            global,
-            roles,
-            members,
-        }
+        // return {
+        //     id: multisigAccount.id,
+        //     metadata,
+        //     deps,
+        //     unverifiedDepsAllowed: multisigAccount.deps.unverifiedAllowed,
+        //     lockedObjects: multisigAccount.intents.locked.contents,
+        //     intentsBagId: multisigAccount.intents.inner.id,
+        //     assetType,
+        //     authVotingPower,
+        //     unstakingCooldown,
+        //     votingRule,
+        //     maxVotingPower,
+        //     minimumVotes,
+        //     votingQuorum,
+        // }
     }
 
-    async fetchFees(): Promise<bigint> {
-        const fees = await FeesRaw.fetch(this.client, MULTISIG_FEES);
-        return fees.amount;
-    }
+    // async fetchFees(): Promise<bigint> {
+    //     const fees = await FeesRaw.fetch(this.client, MULTISIG_FEES);
+    //     return fees.amount;
+    // }
 
     async refresh(id: string = this.id) {
         this.setData(await this.fetch(id));
-        this.fees = await this.fetchFees();
+        // this.fees = await this.fetchFees();
     }
 
-    setData(multisig: MultisigData) {
-        this.id = multisig.id;
-        this.metadata = multisig.metadata;
-        this.deps = multisig.deps;
-        this.unverifiedDepsAllowed = multisig.unverifiedDepsAllowed;
-        this.lockedObjects = multisig.lockedObjects;
-        this.intentsBagId = multisig.intentsBagId;
-        this.global = multisig.global;
-        this.roles = multisig.roles;
-        this.members = multisig.members;
+    setData(dao: DaoData) {
+        this.id = dao.id;
+        this.metadata = dao.metadata;
+        this.deps = dao.deps;
+        this.unverifiedDepsAllowed = dao.unverifiedDepsAllowed;
+        this.lockedObjects = dao.lockedObjects;
+        this.intentsBagId = dao.intentsBagId;
+        this.assetType = dao.assetType;
+        this.authVotingPower = dao.authVotingPower;
+        this.unstakingCooldown = dao.unstakingCooldown;
+        this.votingRule = dao.votingRule;
+        this.maxVotingPower = dao.maxVotingPower;
+        this.minimumVotes = dao.minimumVotes;
+        this.votingQuorum = dao.votingQuorum;
     }
 
-    getData(): MultisigData {
+    getData(): DaoData {
         return {
             id: this.id,
             metadata: this.metadata,
@@ -124,36 +96,44 @@ export class Multisig extends Account implements MultisigData {
             unverifiedDepsAllowed: this.unverifiedDepsAllowed,
             lockedObjects: this.lockedObjects,
             intentsBagId: this.intentsBagId,
-            global: this.global,
-            roles: this.roles,
-            members: this.members,
+            assetType: this.assetType,
+            authVotingPower: this.authVotingPower,
+            unstakingCooldown: this.unstakingCooldown,
+            votingRule: this.votingRule,
+            maxVotingPower: this.maxVotingPower,
+            minimumVotes: this.minimumVotes,
+            votingQuorum: this.votingQuorum,
         }
     }
 
-    member(addr: string): MemberProfile {
-        const member = this.members?.find(m => m.address == addr);
-        if (!member) {
-            throw new Error(`Member with address ${addr} not found.`);
-        }
-        return member;
-    }
 
-
-    newMultisig(
+    newDao(
         tx: Transaction,
-        coin: TransactionObjectInput,
+        assetType: string,
+        authVotingPower: bigint,
+        unstakingCooldown: bigint,
+        votingRule: number,
+        maxVotingPower: bigint,
+        minimumVotes: bigint,
+        votingQuorum: bigint,
     ): TransactionResult {
-        return newAccount(
-            tx,
-            {
-                extensions: EXTENSIONS,
-                fees: MULTISIG_FEES,
-                coin,
-            }
-        );
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::new_account`,
+            typeArguments: [assetType],
+            arguments: [
+                tx.object(DAO_REGISTRY),
+                tx.object(EXTENSIONS),
+                tx.pure.u64(authVotingPower),
+                tx.pure.u64(unstakingCooldown),
+                tx.pure.u8(votingRule),
+                tx.pure.u64(maxVotingPower),
+                tx.pure.u64(minimumVotes),
+                tx.pure.u64(votingQuorum),
+            ],
+        });
     }
 
-    shareMultisig(
+    shareDao(
         tx: Transaction,
         account: TransactionArgument,
     ): TransactionResult {
@@ -161,230 +141,95 @@ export class Multisig extends Account implements MultisigData {
             package: SUI_FRAMEWORK,
             module: "transfer",
             function: "public_share_object",
-            typeArguments: [`${ACCOUNT_PROTOCOL.V1}::account::Account<${MULTISIG_GENERICS[0]}>`],
+            typeArguments: [`${ACCOUNT_PROTOCOL.V1}::account::Account<${DAO_GENERICS[0]}>`],
             arguments: [account],
         });
     }
 
-    joinMultisig(
+    joinDao(
         tx: Transaction,
-        user: TransactionPureInput,
-        account: TransactionObjectInput = this.id,
+        user: string | TransactionArgument,
+        account: string | TransactionArgument = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return join(tx, { user, account });
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::join`,
+            arguments: [
+                typeof user === "string" ? tx.object(user) : user,
+                typeof account === "string" ? tx.object(account) : account,
+            ],
+        });
     }
 
-    leaveMultisig(
+    leaveDao(
         tx: Transaction,
-        user: TransactionObjectInput,
-        account: TransactionObjectInput = this.id,
+        user: string,
+        account: string = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return leave(tx, { user, account });
-    }
-
-    sendInvite(
-        tx: Transaction,
-        recipient: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-        return sendInvite(tx, { account, recipient });
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::leave`,
+            arguments: [
+                tx.object(user),
+                tx.object(account),
+            ],
+        });
     }
 
     authenticate(
         tx: Transaction,
-        account: TransactionObjectInput = this.id,
+        staked: string | TransactionArgument = this.id,
+        account: string | TransactionArgument = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return authenticate(tx, account);
-    }
-
-    emptyApprovalsOutcome(
-        tx: Transaction
-    ): TransactionResult {
-        return emptyOutcome(tx);
-    }
-
-    approveIntent(
-        tx: Transaction,
-        key: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-        return approveIntent(tx, { account, key });
-    }
-
-    disapproveIntent(
-        tx: Transaction,
-        key: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-        return disapproveIntent(tx, { account, key });
-    }
-
-    executeIntent(
-        tx: Transaction,
-        key: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-        return executeIntent(tx, { account, key, clock: CLOCK });
-    }
-
-    // === Atomic Intents ===
-
-    atomicConfigMultisig(
-        tx: Transaction,
-        actionsArgs: ConfigMultisigArgs,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-
-        let addresses: string[] = [];
-        let weights: bigint[] = [];
-        let roles: string[][] = [];
-        if (actionsArgs.members) {
-            actionsArgs.members.forEach((member) => {
-                addresses.push(member.address);
-                weights.push(BigInt(member.weight));
-                roles.push(member.roles);
-            });
-        }
-
-        let global = 0n;
-        let roleNames: string[] = [];
-        let roleThresholds: bigint[] = [];
-        if (actionsArgs.thresholds) {
-            global = BigInt(actionsArgs.thresholds.global);
-            actionsArgs.thresholds.roles.forEach((role) => {
-                roleNames.push(role.name);
-                roleThresholds.push(BigInt(role.threshold));
-            });
-        }
-
-        const auth = this.authenticate(tx, account);
-        const params = Intent.createParams(tx, { key: "config-multisig" });
-        const outcome = this.emptyApprovalsOutcome(tx);
-
-        configMultisig.requestConfigMultisig(
-            tx,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-                addresses,
-                weights,
-                roles,
-                global,
-                roleNames,
-                roleThresholds,
-            }
-        );
-
-        this.approveIntent(tx, "config-multisig", account);
-        const executable = this.executeIntent(tx, "config-multisig", account);
-        configMultisig.executeConfigMultisig(tx, { executable, account });
-        confirmExecution(tx, MULTISIG_GENERICS, { account, executable });
-
-        const expired = destroyEmptyIntent(tx, MULTISIG_GENERICS, { account, key: "config-multisig" });
-        configMultisig.deleteConfigMultisig(tx, expired);
-        return destroyEmptyExpired(tx, expired);
-    }
-
-    atomicToggleUnverifiedDepsAllowed(
-        tx: Transaction,
-        account: TransactionObjectInput,
-    ): TransactionResult {
-        const auth = this.authenticate(tx, account);
-        const params = Intent.createParams(tx, { key: "toggle-unverified-deps" });
-        const outcome = this.emptyApprovalsOutcome(tx);
-
-        config.requestToggleUnverifiedAllowed(
-            tx,
-            MULTISIG_GENERICS,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-            }
-        );
-
-        this.approveIntent(tx, "toggle-unverified-deps", account);
-        const executable = this.executeIntent(tx, "toggle-unverified-deps", account);
-        config.executeToggleUnverifiedAllowed(tx, MULTISIG_GENERICS, { executable, account });
-        confirmExecution(tx, MULTISIG_GENERICS, { account, executable });
-
-        const expired = destroyEmptyIntent(tx, MULTISIG_GENERICS, { account, key: "toggle-unverified-deps" });
-        config.deleteToggleUnverifiedAllowed(tx, expired);
-        return destroyEmptyExpired(tx, expired);
-    }
-
-    atomicConfigDeps(
-        tx: Transaction,
-        actionsArgs: ConfigDepsArgs,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
-
-        const names: string[] = [];
-        const addresses: string[] = [];
-        const versions: bigint[] = [];
-        actionsArgs.deps.forEach((dep) => {
-            names.push(dep.name);
-            addresses.push(dep.addr);
-            versions.push(BigInt(dep.version));
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::authenticate`,
+            typeArguments: [this.assetType],
+            arguments: [
+                typeof staked === "string" ? tx.object(staked) : staked,
+                typeof account === "string" ? tx.object(account) : account,
+                tx.object.clock
+            ],
         });
+    }
 
-        const auth = this.authenticate(tx, account);
-        const params = Intent.createParams(tx, { key: "config-deps" });
-        const outcome = this.emptyApprovalsOutcome(tx);
+    emptyVotesOutcome(
+        tx: Transaction,
+        startTime: bigint,
+        endTime: bigint,
+    ): TransactionResult {
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::empty_votes_outcome`,
+            arguments: [
+                tx.pure.u64(startTime),
+                tx.pure.u64(endTime),
+                tx.object.clock,
+            ],
+        });
+    }
 
-        config.requestConfigDeps(
-            tx,
-            MULTISIG_GENERICS,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-                extensions: EXTENSIONS,
-                names,
-                addresses,
-                versions,
-            }
-        );
-
-        this.approveIntent(tx, "config-deps", account);
-        const executable = this.executeIntent(tx, "config-deps", account);
-        config.executeConfigDeps(tx, MULTISIG_GENERICS, { executable, account });
-        confirmExecution(tx, MULTISIG_GENERICS, { account, executable });
-
-        const expired = destroyEmptyIntent(tx, MULTISIG_GENERICS, { account, key: "config-deps" });
-        config.deleteConfigDeps(tx, expired);
-        return destroyEmptyExpired(tx, expired);
+    executeVotesIntent(
+        tx: Transaction,
+        key: string,
+        account: string | TransactionArgument = this.id,
+    ): TransactionResult {
+        if (!account) {
+            throw new Error("No account available: this.id is not set and no account was provided");
+        }
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::execute_votes_intent`,
+            arguments: [
+                typeof account === "string" ? tx.object(account) : account,
+                tx.pure.string(key),
+                tx.object.clock,
+            ],
+        });
     }
 }
 

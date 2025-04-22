@@ -1,5 +1,5 @@
 import { ACCOUNT_DAO } from "./constants";
-import { AccountData } from "@account.tech/core";
+import { AccountData, IntentArgs } from "@account.tech/core";
 
 export type DepStatus = {
     name: string;
@@ -9,9 +9,19 @@ export type DepStatus = {
     latestVersion: number;
 }
 
-export const DAO_INTENT_TYPES = {
+export type IntentStatus = {
+    stage: 'pending' | 'open' | 'closed' | 'executable'; // vote not open > voting time > vote closed > executable
+    deletable: boolean; // can be deleted because expiration time reached, (can still be resolved or executed)
+}
+
+export const DaoIntentTypes = {
     ConfigDao: `${ACCOUNT_DAO.V1.slice(2)}::config::ConfigDaoIntent`,
 } as const;
+
+export type VoteIntentArgs = IntentArgs & {
+    startTime: bigint;
+    endTime: bigint;
+}
 
 // account.ts
 
@@ -23,7 +33,7 @@ export type DaoData = AccountData & {
     // cooldown when unstaking, voting power decreases linearly over time
     unstakingCooldown: bigint,
     // type of voting mechanism, u8 so we can add more in the future
-    votingRule: bigint,
+    votingRule: number,
     // maximum voting power that can be used in a single vote (can be max_u64)
     maxVotingPower: bigint,
     // minimum number of votes needed to pass a proposal (can be 0 if not important)
@@ -58,7 +68,7 @@ export type ConfigDaoArgs = {
     assetType: string;
     authVotingPower: bigint;
     unstakingCooldown: bigint;
-    votingRule: bigint;
+    votingRule: number;
     maxVotingPower: bigint;
     minimumVotes: bigint;
     votingQuorum: bigint;

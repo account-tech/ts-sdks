@@ -7,16 +7,16 @@ export class Votes implements Outcome {
     dao: string;
     key: string;
     // Votes Data
-    start_time: bigint;
-    end_time: bigint;
+    startTime: bigint;
+    endTime: bigint;
     results: Record<string, bigint>;
 
     constructor(daoId: string, key: string, fields: any) {
         let dao = fields;
         this.dao = daoId;
         this.key = key;
-        this.start_time = dao.start_time;
-        this.end_time = dao.end_time;
+        this.startTime = dao.startTime;
+        this.endTime = dao.endTime;
         this.results = dao.results;
     }
 }

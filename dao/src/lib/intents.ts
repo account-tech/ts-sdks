@@ -1,80 +1,56 @@
-import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
-import * as config from "../.gen/account-multisig/config/functions";
+import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
 import * as accountProtocol from "../.gen/account-protocol/account/functions";
 import * as intents from "../.gen/account-protocol/intents/functions";
-import { ConfigMultisigAction } from "../.gen/account-multisig/config/structs";
 
-import { ConfigMultisigArgs, MultisigIntentTypes } from "./types";
+import { ConfigDaoArgs, DaoIntentTypes } from "./types";
 import { Intent, CLOCK } from "@account.tech/core";
+import { ACCOUNT_DAO } from "./constants";
 
-export class ConfigMultisigIntent extends Intent {
-    static type = MultisigIntentTypes.ConfigMultisig;
-    declare args: ConfigMultisigArgs;
+export class ConfigDaoIntent extends Intent {
+    static type = DaoIntentTypes.ConfigDao;
+    declare args: ConfigDaoArgs;
 
     async init() {
         const actions = await this.fetchActions(this.fields.actionsId);
-        const configMultisigAction = ConfigMultisigAction.fromFieldsWithTypes(actions[0]);
+        const configDaoAction = actions[0].fields;
 
         this.args = {
-            members: configMultisigAction.config.members.map((member) => ({
-                address: member.addr,
-                weight: Number(member.weight),
-                roles: member.roles.contents,
-            })),
-            thresholds: {
-                global: Number(configMultisigAction.config.global),
-                roles: configMultisigAction.config.roles.map((role) => ({
-                    name: role.name,
-                    threshold: Number(role.threshold),
-                })),
-            },
+            assetType: configDaoAction.config.assetType,
+            authVotingPower: BigInt(configDaoAction.config.authVotingPower),
+            unstakingCooldown: BigInt(configDaoAction.config.unstakingCooldown),
+            votingRule: Number(configDaoAction.config.votingRule),
+            maxVotingPower: BigInt(configDaoAction.config.maxVotingPower),
+            minimumVotes: BigInt(configDaoAction.config.minimumVotes),
+            votingQuorum: BigInt(configDaoAction.config.votingQuorum),
         };
     }
 
     request(
         tx: Transaction,
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
-        auth: TransactionObjectInput,
+        auth: TransactionArgument,
         account: string,
-        params: TransactionObjectInput,
-        outcome: TransactionObjectInput,
-        actionArgs: ConfigMultisigArgs,
+        params: TransactionArgument,
+        outcome: TransactionArgument,
+        actionArgs: ConfigDaoArgs,
     ): TransactionResult {
-        let addresses: string[] = [];
-        let weights: bigint[] = [];
-        let roles: string[][] = [];
-        if (actionArgs.members) {
-            actionArgs.members.forEach((member) => {
-                addresses.push(member.address);
-                weights.push(BigInt(member.weight));
-                roles.push(member.roles);
-            });
-        }
 
-        let global = 0n;
-        let roleNames: string[] = [];
-        let roleThresholds: bigint[] = [];
-        if (actionArgs.thresholds) {
-            global = BigInt(actionArgs.thresholds.global);
-            actionArgs.thresholds.roles.forEach((role) => {
-                roleNames.push(role.name);
-                roleThresholds.push(BigInt(role.threshold));
-            });
-        }
-
-        return config.requestConfigMultisig(
-            tx,
+        return tx.moveCall(
             {
-                auth,
-                account,
-                params,
-                outcome,
-                addresses,
-                weights,
-                roles,
-                global,
-                roleNames,
-                roleThresholds,
+                target: `${ACCOUNT_DAO.V1}::config::request_config_dao`,
+                typeArguments: [actionArgs.assetType],
+                arguments: [
+                    auth,
+                    tx.object(account),
+                    params,
+                    outcome,
+                    tx.pure.u64(actionArgs.authVotingPower),
+                    tx.pure.u64(actionArgs.unstakingCooldown),
+                    tx.pure.u8(actionArgs.votingRule),
+                    tx.pure.u64(actionArgs.maxVotingPower),
+                    tx.pure.u64(actionArgs.minimumVotes),
+                    tx.pure.u64(actionArgs.votingQuorum)
+                ],
             }
         );
     }
@@ -82,15 +58,15 @@ export class ConfigMultisigIntent extends Intent {
     execute(
         tx: Transaction,
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
-        executable: TransactionObjectInput,
+        executable: TransactionArgument,
     ): TransactionResult {
-        return config.executeConfigMultisig(
-            tx,
-            {
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::config::execute_config_dao`,
+            arguments: [
                 executable,
-                account: this.account,
-            }
-        );
+                tx.object(this.account),
+            ],
+        });
     }
 
     clearEmpty(
@@ -106,10 +82,12 @@ export class ConfigMultisigIntent extends Intent {
                 key,
             }
         );
-        config.deleteConfigMultisig(
-            tx,
-            expired
-        );
+        tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::config::delete_config_dao`,
+            arguments: [
+                expired,
+            ],
+        });
         return intents.destroyEmptyExpired(
             tx,
             expired,
@@ -130,10 +108,12 @@ export class ConfigMultisigIntent extends Intent {
                 clock: CLOCK,
             }
         );
-        config.deleteConfigMultisig(
-            tx,
-            expired
-        );
+        tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::config::delete_config_dao`,
+            arguments: [
+                expired,
+            ],
+        });
         return intents.destroyEmptyExpired(
             tx,
             expired,

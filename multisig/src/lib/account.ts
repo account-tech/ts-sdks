@@ -168,7 +168,7 @@ export class Multisig extends Account implements MultisigData {
 
     joinMultisig(
         tx: Transaction,
-        user: TransactionPureInput,
+        user: TransactionObjectInput,
         account: TransactionObjectInput = this.id,
     ): TransactionResult {
         if (!account) {
