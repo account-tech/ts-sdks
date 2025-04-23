@@ -11,7 +11,7 @@ import { executeTx, NETWORK, testKeypair, DAO } from "./utils";
 
     const tx = new Transaction();
 
-    dao.stake(tx, 10n);
+    dao.vote(tx, "config-dao-2", "yes");
 
     executeTx(tx);
 })();

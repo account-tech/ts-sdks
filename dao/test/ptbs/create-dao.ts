@@ -12,13 +12,13 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
 
     dao.createDao(
         tx,
-        "0xab5755f407ab5bae7174ab207b4b1ebcdaeeaa2746914e637cdf81d4710e76a6::my_hero::Hero",
-        1n,
-        10000n,
-        1,
-        5n,
-        1n,
-        10n,
+        "0x2::coin::Coin<0x2::sui::SUI>",
+        1n, // authVotingPower
+        10000n, // unstakingCooldown
+        0, // votingRule
+        5n, // maxVotingPower
+        1n, // minimumVotes
+        10n, // votingQuorum
         "Accelerate",
         "description",
         "image",

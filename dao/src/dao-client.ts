@@ -195,7 +195,7 @@ export class DaoClient extends AccountSDK {
 		return this.user.reorderAccounts(tx, this.user.id, DAO_CONFIG_TYPE, daoAddrs);
 	}
 
-	// === Staking & Voting ===
+	// === Staking ===
 
 	stake(tx: Transaction, assets: bigint | string[]) {
 		if (this.participant?.isCoin()) {
@@ -223,8 +223,26 @@ export class DaoClient extends AccountSDK {
 	claim(tx: Transaction) { 
 		this.participant?.claimAll(tx);
 	}
-
-
+	
+	// === Staking Disabled (unstakingCooldown == 0n) ===
+	
+	vote(tx: Transaction, intentKey: string, answer: "no" | "yes" | "abstain") {
+		this.participant?.vote(tx, intentKey, this.participant?.getAnswerNumber(answer));
+	}
+	
+	changeVote(tx: Transaction, intentKey: string, answer: "no" | "yes" | "abstain") {
+		this.participant?.votes
+			.filter(vote => vote.intentKey === intentKey)
+			.filter(vote => vote.answer !== this.participant?.getAnswerNumber(answer))
+			.map(vote => vote.id)
+			.forEach(id => this.participant?.modifyVote(tx, id, this.participant?.getAnswerNumber(answer)));
+	}
+	
+	retrieveVotes(tx: Transaction) {
+		this.participant?.votes
+			.filter(vote => BigInt(Date.now()) > vote.voteEnd)
+			.forEach(vote => this.participant?.destroyVote(tx, vote.id));
+	}
 
 	// === Getters ===
 
@@ -337,34 +355,6 @@ export class DaoClient extends AccountSDK {
 			deletable,
 		};
 	}
-
-	// canApproveIntent(key: string): boolean {
-	// 	const outcome = this.getIntent(key).outcome as Approvals;
-	// 	return outcome.approved.includes(this.user.address!);
-	// }
-
-	/// Returns true if the intent can be executed after potential approval
-	// canExecuteIntent(key: string): boolean {
-	// 	const intent = this.multisig.intent(key);
-	// 	const outcome = intent?.outcome as Approvals;
-	// 	const member = this.multisig.member(this.user.address!);
-
-	// 	switch (this.multisig.intentStatus(key)) {
-	// 		case IntentStatus.Executable:
-	// 			return true;
-	// 		case IntentStatus.Pending:
-	// 			const hasRole = member.roles.includes(intent.fields.role);
-
-	// 			const thresholdReachedAfterApproval =
-	// 				(outcome.totalWeight + member.weight) >= this.multisig.global.threshold ||
-	// 				(hasRole ? outcome.roleWeight + member.weight : outcome.roleWeight) >= this.multisig.roles[intent.fields.role].threshold;
-	// 			const executionTimeReached = intent!.fields.executionTimes[0] <= Date.now();
-
-	// 			return thresholdReachedAfterApproval && executionTimeReached;
-	// 		default:
-	// 			return false;
-	// 	}
-	// }
 
 	getManagedAssets(): Record<string, any> {
 		return this.managedAssets?.assets ?? {};
