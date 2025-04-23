@@ -1,13 +1,8 @@
-import { Transaction, TransactionArgument, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
-import { Account as AccountRaw } from "../.gen/account-protocol/account/structs";
-import { destroyEmptyIntent, confirmExecution } from "../.gen/account-protocol/account/functions";
-import * as config from "../.gen/account-protocol/config/functions";
-import { destroyEmptyExpired } from "../.gen/account-protocol/intents/functions";
-import { DepFields } from "../.gen/account-protocol/deps/structs";
+import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
 
-import { User, Account, Intent, Dep, ConfigDepsArgs, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK, TransactionPureInput } from "@account.tech/core";
+import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
 import { DAO_GENERICS, DAO_CONFIG_TYPE, ACCOUNT_DAO, DAO_REGISTRY } from "./constants";
-import { ConfigDaoArgs, DaoData } from "./types";
+import { DaoData } from "./types";
 
 export class Dao extends Account implements DaoData {
     static type = DAO_CONFIG_TYPE;
@@ -36,30 +31,29 @@ export class Dao extends Account implements DaoData {
             id: this.id,
             options: { showContent: true },
         });
+        const fields = (daoAccount.data?.content as any).fields
 
-        // // get metadata
-        // const metadata = multisigAccount.metadata.inner.contents.map((m: any) => ({ key: m.key, value: m.value }));
+        const metadata = fields.metadata.fields.inner.fields.contents.map((m: any) => ({ key: m.fields.key, value: m.fields.value }));
 
-        // // get deps
-        // const deps: Dep[] = multisigAccount.deps.inner.map((dep: DepFields) => {
-        //     return { name: dep.name, addr: dep.addr, version: Number(dep.version) };
-        // });
+        const deps: Dep[] = fields.deps.fields.inner.map((dep: any) => {
+            return { name: dep.fields.name, addr: dep.fields.addr, version: Number(dep.fields.version) };
+        });
 
-        // return {
-        //     id: multisigAccount.id,
-        //     metadata,
-        //     deps,
-        //     unverifiedDepsAllowed: multisigAccount.deps.unverifiedAllowed,
-        //     lockedObjects: multisigAccount.intents.locked.contents,
-        //     intentsBagId: multisigAccount.intents.inner.id,
-        //     assetType,
-        //     authVotingPower,
-        //     unstakingCooldown,
-        //     votingRule,
-        //     maxVotingPower,
-        //     minimumVotes,
-        //     votingQuorum,
-        // }
+        return {
+            id,
+            metadata,
+            deps,
+            unverifiedDepsAllowed: fields.deps.fields.unverified_allowed,
+            lockedObjects: fields.intents.fields.locked.fields.contents,
+            intentsBagId: fields.intents.fields.inner.fields.id.id,
+            assetType: fields.config.fields.asset_type.fields.name,
+            authVotingPower: BigInt(fields.config.fields.auth_voting_power),
+            unstakingCooldown: BigInt(fields.config.fields.unstaking_cooldown),
+            votingRule: Number(fields.config.fields.voting_rule),
+            maxVotingPower: BigInt(fields.config.fields.max_voting_power),
+            minimumVotes: BigInt(fields.config.fields.minimum_votes),
+            votingQuorum: BigInt(fields.config.fields.voting_quorum),
+        }
     }
 
     // async fetchFees(): Promise<bigint> {
@@ -129,6 +123,29 @@ export class Dao extends Account implements DaoData {
                 tx.pure.u64(maxVotingPower),
                 tx.pure.u64(minimumVotes),
                 tx.pure.u64(votingQuorum),
+            ],
+        });
+    }
+
+    // only callable before sharing
+    addMetadata(
+        tx: Transaction,
+        dao: TransactionArgument,
+        name: string,
+        description: string,
+        image: string,
+        twitter: string,
+        telegram: string,
+        discord: string,
+        github: string,
+        website: string,
+    ): TransactionResult {
+        return tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::add_metadata`,
+            arguments: [
+                dao,
+                tx.pure.vector("string", ["name", "description", "image", "twitter", "telegram", "discord", "github", "website"]),
+                tx.pure.vector("string", [name, description, image, twitter, telegram, discord, github, website]),
             ],
         });
     }

@@ -1,7 +1,7 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import {
 	Intent, OwnedData, AccountPreview, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes, Policy,
+	ActionsArgs, Invite, Profile, ActionsIntentTypes, Policy,
 } from "@account.tech/core";
 import {
 	BorrowCapIntent,
@@ -68,7 +68,7 @@ export class DaoClient extends AccountSDK {
 	/// Creates a dao
 	createDao(
 		tx: Transaction,
-		name: string,
+		// mandatory params
 		assetType: string,
 		authVotingPower: bigint,
 		unstakingCooldown: bigint,
@@ -76,6 +76,16 @@ export class DaoClient extends AccountSDK {
 		maxVotingPower: bigint,
 		minimumVotes: bigint,
 		votingQuorum: bigint,
+		// social params
+		name: string,
+		description: string,
+		image: string,
+		twitter: string,
+		telegram: string,
+		discord: string,
+		github: string,
+		website: string,
+		// user params
 		newUser?: { username: string, profilePicture: string },
 	): TransactionResult {
 		// create the user if the user doesn't have one
@@ -91,17 +101,16 @@ export class DaoClient extends AccountSDK {
 			});
 		}
 		// create the dao
-		// const fee = tx.splitCoins(tx.gas, [this.dao.fees]);
+		// const fee = tx.splitCoins(tx.gas, [this.dao.fees]); // TODO: add fees
 		const dao = this.dao.newDao(tx, assetType, authVotingPower, unstakingCooldown, votingRule, maxVotingPower, minimumVotes, votingQuorum);
 		// add name
-		const auth = this.dao.authenticate(tx, dao);
-		commands.replaceMetadata(tx, DAO_CONFIG_TYPE, auth, dao, ["name"], [name]);
+		const daoWithMetadata = this.dao.addMetadata(tx, dao, name, description, image, twitter, telegram, discord, github, website);
 		// creator register the dao in his user
-		this.dao.joinDao(tx, createdUser ? createdUser : userId, dao);
+		this.dao.joinDao(tx, createdUser ? createdUser : userId, daoWithMetadata);
 		// transfer the user if just created
 		if (createdUser) this.user.transferUser(tx, createdUser, this.user.address!);
 		// share the dao
-		return this.dao.shareDao(tx, dao);
+		return this.dao.shareDao(tx, daoWithMetadata);
 	}
 
 	/// Factory function to call the appropriate request function

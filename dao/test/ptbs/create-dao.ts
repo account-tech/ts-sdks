@@ -1,21 +1,33 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { MultisigClient } from "../../src/dao-client";
+import { DaoClient } from "../../src/dao-client";
 import { executeTx, NETWORK, testKeypair } from "./utils";
 
 (async () => {
-    const ms = await MultisigClient.init(
+    const dao = await DaoClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
     );
 
     const tx = new Transaction();
 
-    ms.createDao(
+    dao.createDao(
         tx,
-        "Main",
+        "0x2::coin::Coin<0x2::sui::SUI>",
+        1n,
+        0n,
+        1,
+        5n,
+        1n,
+        10n,
+        "Accelerate",
+        "description",
+        "image",
+        "twitter",
+        "telegram",
+        "discord",
+        "github",
+        "website",
         { username: "Thouny", profilePicture: "https://example.com/avatar.png" },
-        ["0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c"],
-        // 2
     );
 
     executeTx(tx);
