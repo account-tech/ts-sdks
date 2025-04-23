@@ -8,4 +8,4 @@ rpc = "https://rpc-testnet.suiscan.xyz:443"
 [packages]
 # AccountDao = { git = "https://github.com/account-tech/move-registry.git", subdir = "packages/dao", rev = "testnet" }
 AccountProtocol = { local = "../../../../move-framework/packages/protocol" }
-AccountDao = { local = "../../../../move-registry/packages/dao" }
+# AccountDao = { local = "../../../../move-registry/packages/dao" }

@@ -15,13 +15,13 @@ export class ConfigDaoIntent extends Intent {
         const configDaoAction = actions[0].fields;
 
         this.args = {
-            assetType: configDaoAction.config.assetType,
-            authVotingPower: BigInt(configDaoAction.config.authVotingPower),
-            unstakingCooldown: BigInt(configDaoAction.config.unstakingCooldown),
-            votingRule: Number(configDaoAction.config.votingRule),
-            maxVotingPower: BigInt(configDaoAction.config.maxVotingPower),
-            minimumVotes: BigInt(configDaoAction.config.minimumVotes),
-            votingQuorum: BigInt(configDaoAction.config.votingQuorum),
+            assetType: configDaoAction.config.fields.asset_type.fields.name,
+            authVotingPower: BigInt(configDaoAction.config.fields.auth_voting_power),
+            unstakingCooldown: BigInt(configDaoAction.config.fields.unstaking_cooldown),
+            votingRule: Number(configDaoAction.config.fields.voting_rule),
+            maxVotingPower: BigInt(configDaoAction.config.fields.max_voting_power),
+            minimumVotes: BigInt(configDaoAction.config.fields.minimum_votes),
+            votingQuorum: BigInt(configDaoAction.config.fields.voting_quorum),
         };
     }
 

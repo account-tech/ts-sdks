@@ -1,2 +1,2 @@
 export * from "./lib";
-export { MultisigClient } from "./multisig-client";
+export { MultisigClient } from "./dao-client";

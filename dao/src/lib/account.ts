@@ -112,9 +112,11 @@ export class Dao extends Account implements DaoData {
         minimumVotes: bigint,
         votingQuorum: bigint,
     ): TransactionResult {
+        const formattedAssetType = normalizeStructTag(assetType);
+
         return tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::new_account`,
-            typeArguments: [assetType],
+            typeArguments: [formattedAssetType],
             arguments: [
                 tx.object(DAO_REGISTRY),
                 tx.object(EXTENSIONS),

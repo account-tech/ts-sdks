@@ -71,10 +71,10 @@ fun init(otw: MY_HERO, ctx: &mut TxContext) {
     transfer::public_transfer(publisher, ctx.sender());
     transfer::public_transfer(display, ctx.sender());
 
-    mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
-    mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
-    mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
-    mint_and_transfer(@0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c, ctx);
+    mint_and_transfer(@0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161, ctx);
+    mint_and_transfer(@0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161, ctx);
+    mint_and_transfer(@0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161, ctx);
+    mint_and_transfer(@0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161, ctx);
 
     transfer::public_transfer(Object {id: object::new(ctx), value: 90}, @0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c);
     transfer::public_transfer(Object {id: object::new(ctx), value: 7}, @0x3f50ede2b1e41f3515f03be51be68befea18fc20e22166406e584bf73c62c85c);

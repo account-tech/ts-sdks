@@ -49,18 +49,28 @@ export class Participant {
 
             voteObjs.push(...data);
         }
-
+        
         return voteObjs
-            .filter((obj) => (obj.data!.content as any).fields.daoAddr === daoAddr)
-            .map((obj) => ({
-                id: obj.data!.objectId,
-                daoAddr: (obj.data!.content as any).fields.daoAddr,
-                intentKey: (obj.data!.content as any).fields.intentKey,
-                answer: (obj.data!.content as any).fields.answer,
-                power: (obj.data!.content as any).fields.power,
-                voteEnd: (obj.data!.content as any).fields.voteEnd,
-                staked: (obj.data!.content as any).fields.staked,
-            }));
+        .filter((obj) => (obj.data!.content as any).fields.dao_addr === daoAddr)
+        .map((obj) => {
+                const staked = {
+                    id: (obj.data!.content as any).fields.staked.fields.id.id,
+                    daoAddr: (obj.data!.content as any).fields.staked.fields.dao_addr,
+                    value: BigInt((obj.data!.content as any).fields.staked.fields.value),
+                    unstaked: (obj.data!.content as any).fields.staked.fields.unstaked ? BigInt((obj.data!.content as any).fields.staked.fields.unstaked) : null,
+                    assetType: (obj.data!.content as any).fields.staked.fields.asset.type.match(/<(.+)>/)![1],
+                }
+
+                return {
+                    id: obj.data!.objectId,
+                    daoAddr: (obj.data!.content as any).fields.dao_addr,
+                    intentKey: (obj.data!.content as any).fields.intent_key,
+                    answer: Number((obj.data!.content as any).fields.answer),
+                    power: BigInt((obj.data!.content as any).fields.power),
+                    voteEnd: BigInt((obj.data!.content as any).fields.vote_end),
+                    staked,
+                }
+            });
     }
 
     async fetchStaked(
@@ -89,7 +99,7 @@ export class Participant {
                 id: obj.data!.objectId,
                 daoAddr: (obj.data!.content as any).fields.dao_addr,
                 value: BigInt((obj.data!.content as any).fields.value),
-                unstaked: (obj.data!.content as any).fields.unstaked,
+                unstaked: (obj.data!.content as any).fields.unstaked ? BigInt((obj.data!.content as any).fields.unstaked) : null,
                 assetType: (obj.data!.content as any).fields.asset.type.match(/<(.+)>/)![1],
             }));
     }
@@ -284,22 +294,98 @@ export class Participant {
     // Voting                                                                                           //
     //**************************************************************************************************//
 
+    // stakeAndVote(tx: Transaction, intentKey: string, answer: number, assets: bigint | string[]) {
+    //     let staked: TransactionResult | undefined;
+    //     if (this.isCoin()) {
+    //         staked = tx.moveCall({
+    //             target: `${ACCOUNT_DAO.V1}::dao::new_staked_coin`,
+    //             typeArguments: [this.getCoinType()],
+    //             arguments: [tx.object(this.daoAddr)]
+    //         });
+    //         tx.moveCall({
+    //             target: `${ACCOUNT_DAO.V1}::dao::stake_coin`,
+    //             typeArguments: [this.getCoinType()],
+    //             arguments: [staked, coinWithBalance({ type: this.getCoinType(), balance: assets as bigint })]
+    //         });
+    //     } else {
+    //         staked = tx.moveCall({
+    //             target: `${ACCOUNT_DAO.V1}::dao::new_staked_object`,
+    //             typeArguments: [this.assetType],
+    //             arguments: [tx.object(this.daoAddr)]
+    //         });
+    //         (assets as string[]).forEach((id) => {
+    //             tx.moveCall({
+    //                 target: `${ACCOUNT_DAO.V1}::dao::stake_object`,
+    //                 typeArguments: [this.assetType],
+    //                 arguments: [staked!, tx.object(id)]
+    //             });
+    //         });
+    //     }
+
+    //     const vote = tx.moveCall({
+    //         target: `${ACCOUNT_DAO.V1}::dao::new_vote`,
+    //         typeArguments: [this.assetType],
+    //         arguments: [
+    //             tx.object(this.daoAddr), 
+    //             tx.pure.string(intentKey), 
+    //             staked, 
+    //             tx.object(CLOCK)
+    //         ]
+    //     });
+
+    //     tx.moveCall({
+    //         target: `${ACCOUNT_DAO.V1}::dao::vote`,
+    //         typeArguments: [this.assetType],
+    //         arguments: [
+    //             vote, 
+    //             tx.object(this.daoAddr), 
+    //             tx.pure.u8(answer), 
+    //             tx.object(CLOCK)
+    //         ]
+    //     });
+
+    //     tx.transferObjects([vote], this.userAddr);
+    // }
+
     vote(tx: Transaction, intentKey: string, answer: number) {
         this.mergeAllStaked(tx);
 
         const vote = tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::new_vote`,
             typeArguments: [this.assetType],
-            arguments: [tx.object(this.daoAddr), tx.pure.string(intentKey), tx.object(this.staked[0].id), tx.object(CLOCK)]
+            arguments: [
+                tx.object(this.daoAddr), 
+                tx.pure.string(intentKey), 
+                tx.object(this.staked[0].id), 
+                tx.object(CLOCK)
+            ]
         });
 
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::vote`,
             typeArguments: [this.assetType],
-            arguments: [vote, tx.object(this.daoAddr), tx.pure.u8(answer), tx.object(CLOCK)]
+            arguments: [
+                vote, 
+                tx.object(this.daoAddr), 
+                tx.pure.u8(answer), 
+                tx.object(CLOCK)
+            ]
         });
 
         tx.transferObjects([vote], this.userAddr);
+    }
+
+    modifyVote(tx: Transaction, voteId: string, answer: number) {
+        tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::vote`,
+            typeArguments: [this.assetType],
+            arguments: [
+                tx.object(voteId), 
+                tx.object(this.daoAddr), 
+                tx.pure.u8(answer), 
+                tx.object(CLOCK)
+            ]
+        });
     }
 
     destroyVote(tx: Transaction, voteId: string) {
@@ -310,11 +396,13 @@ export class Participant {
             throw new Error("Vote is not ended");
         }
 
-        tx.moveCall({
+        const staked = tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::destroy_vote`,
             typeArguments: [this.assetType],
             arguments: [tx.object(voteId), tx.object(CLOCK)]
         });
+
+        tx.transferObjects([staked], this.userAddr);
     }
 
     //**************************************************************************************************//
@@ -363,4 +451,16 @@ export class Participant {
                 throw new Error("Invalid rule");
         }
     }
+
+    getAnswerNumber(answer: "no" | "yes" | "abstain"): number {
+        switch (answer) {
+            case "no":
+                return 0;
+            case "yes":
+                return 1;
+            case "abstain":
+                return 2;
+        }
+    }
+    
 }

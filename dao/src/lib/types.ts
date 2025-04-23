@@ -48,7 +48,7 @@ export type Vote = {
     id: string;
     daoAddr: string;
     intentKey: string;
-    answer: string;
+    answer: number;
     power: bigint;
     voteEnd: bigint;
     staked: Staked;
