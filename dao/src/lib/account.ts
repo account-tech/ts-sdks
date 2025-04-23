@@ -46,7 +46,7 @@ export class Dao extends Account implements DaoData {
             unverifiedDepsAllowed: fields.deps.fields.unverified_allowed,
             lockedObjects: fields.intents.fields.locked.fields.contents,
             intentsBagId: fields.intents.fields.inner.fields.id.id,
-            assetType: fields.config.fields.asset_type.fields.name,
+            assetType: "0x" + fields.config.fields.asset_type.fields.name,
             authVotingPower: BigInt(fields.config.fields.auth_voting_power),
             unstakingCooldown: BigInt(fields.config.fields.unstaking_cooldown),
             votingRule: Number(fields.config.fields.voting_rule),

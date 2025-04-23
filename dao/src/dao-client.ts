@@ -21,8 +21,10 @@ import { Dao } from "./lib/account";
 import { Votes } from "./lib/outcome";
 import { ConfigDaoIntent } from "./lib/intents";
 import { DaoData, DepStatus, IntentStatus, VoteIntentArgs } from "./lib/types";
+import { Participant } from "./lib/user";
 
 export class DaoClient extends AccountSDK {
+	participant?: Participant;
 
 	get dao(): Dao {
 		return this.account as Dao;
@@ -54,15 +56,24 @@ export class DaoClient extends AccountSDK {
 				outcomeFactory: [Votes],
 			}
 		);
+
+		if (daoId) {
+			(daoClient as DaoClient).participant = await Participant.init(
+				daoClient.client, daoId, (daoClient.account as Dao).assetType, userAddr
+			);
+		}
+		
 		return daoClient as DaoClient;
 	}
 
 	async refresh() {
 		await super.refresh();
+		await this.participant?.refresh();
 	}
 
 	async switchDao(daoId: string) {
 		await this.account.refresh(daoId);
+		await this.participant?.refresh(daoId, this.dao.assetType);
 	}
 
 	/// Creates a dao

@@ -23,26 +23,32 @@ export class Participant {
 
     static async init(client: SuiClient, daoAddr: string, assetType: string, userAddr: string): Promise<Participant> {
         const participant = new Participant(client, daoAddr, assetType, userAddr);
+        await participant.refresh();
 
-        // get Vote objects
+        return participant;
+    }
+
+    async fetchVotes(
+        daoAddr: string = this.daoAddr,
+        assetType: string = this.assetType,
+    ): Promise<Vote[]> {
         let voteObjs: SuiObjectResponse[] = [];
-        {
-            let data: SuiObjectResponse[] = [];
-            let nextCursor: string | null | undefined = null;
-            let hasNextPage = true;
+        let data: SuiObjectResponse[] = [];
+        let nextCursor: string | null | undefined = null;
+        let hasNextPage = true;
 
-            while (hasNextPage) {
-                ({ data, hasNextPage, nextCursor } = await client.getOwnedObjects({
-                    owner: userAddr,
-                    cursor: nextCursor,
-                    filter: { StructType: `${ACCOUNT_DAO.V1}::dao::Vote<${assetType}>` },
-                    options: { showContent: true },
-                }));
+        while (hasNextPage) {
+            ({ data, hasNextPage, nextCursor } = await this.client.getOwnedObjects({
+                owner: this.userAddr,
+                cursor: nextCursor,
+                filter: { StructType: `${ACCOUNT_DAO.V1}::dao::Vote<${assetType}>` },
+                options: { showContent: true },
+            }));
 
-                voteObjs.push(...data);
-            }
+            voteObjs.push(...data);
         }
-        participant.votes = voteObjs
+
+        return voteObjs
             .filter((obj) => (obj.data!.content as any).fields.daoAddr === daoAddr)
             .map((obj) => ({
                 id: obj.data!.objectId,
@@ -53,27 +59,29 @@ export class Participant {
                 voteEnd: (obj.data!.content as any).fields.voteEnd,
                 staked: (obj.data!.content as any).fields.staked,
             }));
+    }
 
-        // get Staked objects
+    async fetchStaked(
+        daoAddr: string = this.daoAddr,
+        assetType: string = this.assetType,
+    ): Promise<Staked[]> {
         let stakedObjs: SuiObjectResponse[] = [];
-        {
-            let data: SuiObjectResponse[] = [];
-            let nextCursor: string | null | undefined = null;
-            let hasNextPage = true;
+        let data: SuiObjectResponse[] = [];
+        let nextCursor: string | null | undefined = null;
+        let hasNextPage = true;
 
-            while (hasNextPage) {
-                ({ data, hasNextPage, nextCursor } = await client.getOwnedObjects({
-                    owner: userAddr,
-                    cursor: nextCursor,
-                    filter: { StructType: `${ACCOUNT_DAO.V1}::dao::Staked<${assetType}>` },
-                    options: { showContent: true },
-                }));
+        while (hasNextPage) {
+            ({ data, hasNextPage, nextCursor } = await this.client.getOwnedObjects({
+                owner: this.userAddr,
+                cursor: nextCursor,
+                filter: { StructType: `${ACCOUNT_DAO.V1}::dao::Staked<${assetType}>` },
+                options: { showContent: true },
+            }));
 
-                stakedObjs.push(...data);
-            }
+            stakedObjs.push(...data);
         }
 
-        const stakedDao = stakedObjs
+        return stakedObjs
             .filter((obj) => (obj.data!.content as any).fields.daoAddr === daoAddr)
             .map((obj) => ({
                 id: obj.data!.objectId,
@@ -82,38 +90,51 @@ export class Participant {
                 unstaked: (obj.data!.content as any).fields.unstaked,
                 assetType: (obj.data!.content as any).fields.assetType,
             }));
+    }
 
-        participant.staked = stakedDao.filter((staked) => staked.unstaked === null);
-        participant.unstaked = stakedDao.filter((staked) => BigInt(Math.floor(Date.now())) < BigInt(staked.unstaked));
-        participant.claimable = stakedDao.filter((staked) => BigInt(Math.floor(Date.now())) >= BigInt(staked.unstaked));
+    async fetchCoins(assetType: string = this.assetType): Promise<bigint> {
+        const balance = await this.client.getBalance({
+            owner: this.userAddr,
+            coinType: this.getCoinType(assetType),
+        });
+        return BigInt(balance.totalBalance);
+    }
 
-        // get assets owned by the user
-        if (participant.assetType.startsWith("0x2::coin::Coin")) {
-            const balance = await client.getBalance({
-                owner: userAddr,
-                coinType: participant.assetType,
-            });
-            participant.coinBalance = BigInt(balance.totalBalance);
-        } else {
-            let nfts: SuiObjectResponse[] = [];
-            let data: SuiObjectResponse[] = [];
-            let nextCursor: string | null | undefined = null;
-            let hasNextPage = true;
+    async fetchNfts(assetType: string = this.assetType): Promise<string[]> {
+        let nfts: SuiObjectResponse[] = [];
+        let data: SuiObjectResponse[] = [];
+        let nextCursor: string | null | undefined = null;
+        let hasNextPage = true;
 
-            while (hasNextPage) {
-                ({ data, hasNextPage, nextCursor } = await client.getOwnedObjects({
-                    owner: userAddr,
-                    cursor: nextCursor,
-                    filter: { StructType: participant.assetType },
-                    options: { showContent: true },
-                }));
+        while (hasNextPage) {
+            ({ data, hasNextPage, nextCursor } = await this.client.getOwnedObjects({
+                owner: this.userAddr,
+                cursor: nextCursor,
+                filter: { StructType: assetType },
+                options: { showContent: true },
+            }));
 
-                nfts.push(...data);
-            }
-            participant.nftIds = nfts.map((obj) => obj.data!.objectId);
+            nfts.push(...data);
         }
+        return nfts.map((obj) => obj.data!.objectId);
+    }
 
-        return participant;
+    async refresh(
+        daoAddr: string = this.daoAddr,
+        assetType: string = this.assetType,
+    ) {
+        this.votes = await this.fetchVotes(daoAddr, assetType);
+
+        const stakedDao = await this.fetchStaked(daoAddr, assetType);
+        this.staked = stakedDao.filter((staked) => staked.unstaked === null);
+        this.unstaked = stakedDao.filter((staked) => BigInt(Math.floor(Date.now())) < BigInt(staked.unstaked));
+        this.claimable = stakedDao.filter((staked) => BigInt(Math.floor(Date.now())) >= BigInt(staked.unstaked));
+
+        if (this.assetType.startsWith("0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin")) {
+            this.coinBalance = await this.fetchCoins(assetType);
+        } else {
+            this.nftIds = await this.fetchNfts(assetType);
+        }
     }
 
     //**************************************************************************************************//
@@ -281,14 +302,14 @@ export class Participant {
         }
     }
 
-    isCoin(): boolean {
-        return this.assetType.startsWith("0x2::coin::Coin");
+    isCoin(assetType: string = this.assetType): boolean {
+        return assetType.startsWith("0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin");
     } 
 
-    getCoinType(): string {
-        if (!this.isCoin()) {
+    getCoinType(assetType: string = this.assetType): string {
+        if (!this.isCoin(assetType)) {
             throw new Error("Asset is not a coin");
         }
-        return this.assetType.match(/<([^>]*)>/)![1];
+        return assetType.match(/<([^>]*)>/)![1];
     }
 }
