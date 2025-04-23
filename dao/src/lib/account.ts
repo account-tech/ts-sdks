@@ -1,4 +1,5 @@
 import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
+import { normalizeStructTag } from "@mysten/sui/utils";
 
 import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
 import { DAO_GENERICS, DAO_CONFIG_TYPE, ACCOUNT_DAO, DAO_REGISTRY } from "./constants";
@@ -46,7 +47,7 @@ export class Dao extends Account implements DaoData {
             unverifiedDepsAllowed: fields.deps.fields.unverified_allowed,
             lockedObjects: fields.intents.fields.locked.fields.contents,
             intentsBagId: fields.intents.fields.inner.fields.id.id,
-            assetType: "0x" + fields.config.fields.asset_type.fields.name,
+            assetType: normalizeStructTag(fields.config.fields.asset_type.fields.name),
             authVotingPower: BigInt(fields.config.fields.auth_voting_power),
             unstakingCooldown: BigInt(fields.config.fields.unstaking_cooldown),
             votingRule: Number(fields.config.fields.voting_rule),

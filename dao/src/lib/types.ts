@@ -58,7 +58,7 @@ export type Staked = {
     id: string;
     daoAddr: string;
     value: bigint;
-    unstaked: bigint;
+    unstaked: bigint | null;
     assetType: string;
 }
 

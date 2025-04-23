@@ -186,6 +186,35 @@ export class DaoClient extends AccountSDK {
 		return this.user.reorderAccounts(tx, this.user.id, DAO_CONFIG_TYPE, daoAddrs);
 	}
 
+	// === Staking ===
+
+	stake(tx: Transaction, assets: bigint | string[]) {
+		if (this.participant?.isCoin()) {
+			this.participant?.stakeCoins(tx, assets as bigint);
+		} else {
+			this.participant?.stakeNfts(tx, assets as string[]);
+		}
+	}
+
+	unstake(tx: Transaction, assets: bigint | string[]) {
+		let to_unstake;
+		if (this.participant?.isCoin()) {
+			to_unstake = this.participant?.unstakeCoins(tx, assets as bigint);
+		} else {
+			to_unstake = this.participant?.unstakeNfts(tx, assets as string[]);
+		}
+
+		if (this.dao.unstakingCooldown == 0n) {
+			this.participant?.claimUnstaked(tx, to_unstake!);
+		} else {
+			tx.transferObjects([to_unstake!], this.user.address!);
+		}
+	}
+
+	claim(tx: Transaction) { 
+		this.participant?.claimAll(tx);
+	}
+
 	// === Getters ===
 
 	/// Returns the latest deps from the extensions
@@ -260,7 +289,6 @@ export class DaoClient extends AccountSDK {
 
 	getIntent(key: string): Intent {
 		const intent = this.intents?.intents[key];
-		console.log(intent);
 		if (!intent) throw new Error("Intent not found");
 		return intent;
 	}

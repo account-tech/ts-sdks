@@ -1,7 +1,9 @@
 import { SuiClient, SuiObjectResponse } from "@mysten/sui/client";
+import { normalizeStructTag } from "@mysten/sui/utils";
+
 import { Vote, Staked } from "./types";
 import { ACCOUNT_DAO } from "./constants";
-import { coinWithBalance, Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { coinWithBalance, Transaction, TransactionArgument, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 // import { mergeStakedCoin, mergeStakedObject, newStakedCoin, newStakedObject, stakeCoin, stakeObject, unstake, splitStakedCoin } from "src/.gen/account-dao/dao/functions";
 import { CLOCK } from "@account.tech/core";
 
@@ -41,7 +43,7 @@ export class Participant {
             ({ data, hasNextPage, nextCursor } = await this.client.getOwnedObjects({
                 owner: this.userAddr,
                 cursor: nextCursor,
-                filter: { StructType: `${ACCOUNT_DAO.V1}::dao::Vote<${assetType}>` },
+                filter: { StructType: normalizeStructTag(`${ACCOUNT_DAO.V1}::dao::Vote<${assetType}>`) },
                 options: { showContent: true },
             }));
 
@@ -74,7 +76,7 @@ export class Participant {
             ({ data, hasNextPage, nextCursor } = await this.client.getOwnedObjects({
                 owner: this.userAddr,
                 cursor: nextCursor,
-                filter: { StructType: `${ACCOUNT_DAO.V1}::dao::Staked<${assetType}>` },
+                filter: { StructType: normalizeStructTag(`${ACCOUNT_DAO.V1}::dao::Staked<${assetType}>`) },
                 options: { showContent: true },
             }));
 
@@ -82,13 +84,13 @@ export class Participant {
         }
 
         return stakedObjs
-            .filter((obj) => (obj.data!.content as any).fields.daoAddr === daoAddr)
+            .filter((obj) => (obj.data!.content as any).fields.dao_addr === daoAddr)
             .map((obj) => ({
                 id: obj.data!.objectId,
-                daoAddr: (obj.data!.content as any).fields.daoAddr,
+                daoAddr: (obj.data!.content as any).fields.dao_addr,
                 value: BigInt((obj.data!.content as any).fields.value),
                 unstaked: (obj.data!.content as any).fields.unstaked,
-                assetType: (obj.data!.content as any).fields.assetType,
+                assetType: (obj.data!.content as any).fields.asset.type.match(/<(.+)>/)![1],
             }));
     }
 
@@ -127,8 +129,8 @@ export class Participant {
 
         const stakedDao = await this.fetchStaked(daoAddr, assetType);
         this.staked = stakedDao.filter((staked) => staked.unstaked === null);
-        this.unstaked = stakedDao.filter((staked) => BigInt(Math.floor(Date.now())) < BigInt(staked.unstaked));
-        this.claimable = stakedDao.filter((staked) => BigInt(Math.floor(Date.now())) >= BigInt(staked.unstaked));
+        this.unstaked = stakedDao.filter((staked) => staked.unstaked && BigInt(Math.floor(Date.now())) < staked.unstaked);
+        this.claimable = stakedDao.filter((staked) => staked.unstaked && BigInt(Math.floor(Date.now())) >= staked.unstaked);
 
         if (this.assetType.startsWith("0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin")) {
             this.coinBalance = await this.fetchCoins(assetType);
@@ -145,15 +147,21 @@ export class Participant {
         if (!this.isCoin()) {
             throw new Error("Asset is not a coin");
         }
+        if (!this.coinBalance || this.coinBalance < amount) {
+            throw new Error("Insufficient balance");
+        }
+        
         this.mergeAllStaked(tx);
         // if there is no staked object, we need to create a new one
-        let staked: TransactionObjectInput = this.staked[0].id;
+        let staked: TransactionObjectInput | undefined;
         if (this.staked.length == 0) {
             staked = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::new_staked_coin`,
                 typeArguments: [this.getCoinType()],
                 arguments: [tx.object(this.daoAddr)]
             });
+        } else {
+            staked = this.staked[0].id;
         }
         // stake new coin 
         tx.moveCall({
@@ -171,15 +179,21 @@ export class Participant {
         if (this.isCoin()) {
             throw new Error("Asset is a coin");
         }
+        if (!this.nftIds || nftIds.filter((id) => this.nftIds?.includes(id)).length === 0) {
+            throw new Error("Wrong NFTs provided");
+        }
+        
         this.mergeAllStaked(tx);
         // if there is no staked object, we need to create a new one
-        let staked: TransactionObjectInput = this.staked[0].id;
+        let staked: TransactionObjectInput | undefined;
         if (this.staked.length == 0) {
             staked = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::new_staked_object`,
                 typeArguments: [this.assetType],
                 arguments: [tx.object(this.daoAddr)]
             });
+        } else {
+            staked = this.staked[0].id;
         }
         // stake new nfts
         nftIds.forEach((id) => {
@@ -199,6 +213,10 @@ export class Participant {
         if (!this.isCoin()) {
             throw new Error("Asset is not a coin");
         }
+        if (this.staked.length == 0) {
+            throw new Error("No staked coin");
+        }
+
         this.mergeAllStaked(tx);
         // split staked coin with the amount to unstake
         const to_unstake = tx.moveCall({
@@ -209,8 +227,8 @@ export class Participant {
         // start unstake process for newly created staked coin
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::unstake`,
-            typeArguments: [this.getCoinType()],
-            arguments: [tx.object(to_unstake), tx.pure.u64(CLOCK)]
+            typeArguments: [this.assetType],
+            arguments: [to_unstake, tx.object(this.daoAddr), tx.object.clock]
         });
         // return newly created staked object
         return to_unstake;
@@ -220,6 +238,10 @@ export class Participant {
         if (this.isCoin()) {
             throw new Error("Asset is a coin");
         }
+        if (this.staked.length == 0) {
+            throw new Error("No staked NFTs");
+        }
+
         this.mergeAllStaked(tx);
         // stake new coin
         const to_unstake = tx.moveCall({
@@ -231,20 +253,29 @@ export class Participant {
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::unstake`,
             typeArguments: [this.assetType],
-            arguments: [tx.object(to_unstake), tx.pure.u64(CLOCK)]
+            arguments: [to_unstake, tx.object(this.daoAddr), tx.object.clock]
         });
         // return newly created staked object
         return to_unstake;
     }
 
-    claim(tx: Transaction, ids?: string[]) { // if ids is not provided, all claimable will be claimed
-        const to_claim = ids ?? this.claimable.map((staked) => staked.id);
+    claimUnstaked(tx: Transaction, staked: TransactionArgument) {
+        tx.moveCall({
+            target: `${ACCOUNT_DAO.V1}::dao::claim_and_keep`,
+            typeArguments: [this.assetType],
+            arguments: [staked, tx.object.clock]
+        });
+    }
 
-        to_claim.forEach((id) => {
+    claimAll(tx: Transaction) { // if ids is not provided, all claimable will be claimed
+        if (this.claimable.length == 0) {
+            throw new Error("No claimable");
+        }
+        this.claimable.map((staked) => staked.id).forEach((id) => {
             tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::claim_and_keep`,
                 typeArguments: [this.assetType],
-                arguments: [tx.object(id)]
+                arguments: [tx.object(id), tx.object.clock]
             });
         });
     }
