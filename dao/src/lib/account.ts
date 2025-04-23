@@ -200,7 +200,7 @@ export class Dao extends Account implements DaoData {
 
     authenticate(
         tx: Transaction,
-        staked: string | TransactionArgument = this.id,
+        staked: string | TransactionArgument,
         account: string | TransactionArgument = this.id,
     ): TransactionResult {
         if (!account) {

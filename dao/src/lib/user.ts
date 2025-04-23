@@ -343,4 +343,24 @@ export class Participant {
         }
         return assetType.match(/<([^>]*)>/)![1];
     }
+
+    getVotingPower(): bigint {
+        return this.votes.reduce((acc, vote) => acc + vote.power, 0n);
+    }
+    
+    getStakedPower(cooldown: bigint, rule: number): bigint {
+        const staked = this.staked.reduce((acc, staked) => acc + staked.value, 0n);
+        const unstaked = this.unstaked.reduce((acc, unstaked) => {
+            return acc + unstaked.value * (unstaked.unstaked! - BigInt(Math.floor(Date.now()))) / cooldown;
+        }, 0n);
+
+        switch (rule) {
+            case 0:
+                return staked + unstaked;
+            case 1:
+                return BigInt(Math.sqrt(Number(staked + unstaked)));
+            default:
+                throw new Error("Invalid rule");
+        }
+    }
 }

@@ -124,6 +124,16 @@ export class DaoClient extends AccountSDK {
 		return this.dao.shareDao(tx, daoWithMetadata);
 	}
 
+	authenticate(tx: Transaction) {
+		if (this.participant!.getStakedPower(this.dao.unstakingCooldown, this.dao.votingRule) < this.dao.authVotingPower) {
+			throw new Error("Insufficient voting power");
+		}
+
+		this.participant!.mergeAllStaked(tx);
+
+		return this.dao.authenticate(tx, this.participant!.staked[0].id);
+	}
+
 	/// Factory function to call the appropriate request function
 	request(
 		tx: Transaction,
@@ -131,7 +141,7 @@ export class DaoClient extends AccountSDK {
 		intentArgs: VoteIntentArgs,
 		actionsArgs: ActionsArgs,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -144,7 +154,6 @@ export class DaoClient extends AccountSDK {
 	/// Calls the execute function for the intent, approve if not already done
 	execute(
 		tx: Transaction,
-		caller: string,
 		intentKey: string
 	): TransactionResult {
 		const intent = this.intents?.intents[intentKey];
@@ -186,7 +195,7 @@ export class DaoClient extends AccountSDK {
 		return this.user.reorderAccounts(tx, this.user.id, DAO_CONFIG_TYPE, daoAddrs);
 	}
 
-	// === Staking ===
+	// === Staking & Voting ===
 
 	stake(tx: Transaction, assets: bigint | string[]) {
 		if (this.participant?.isCoin()) {
@@ -214,6 +223,8 @@ export class DaoClient extends AccountSDK {
 	claim(tx: Transaction) { 
 		this.participant?.claimAll(tx);
 	}
+
+
 
 	// === Getters ===
 
@@ -397,7 +408,7 @@ export class DaoClient extends AccountSDK {
 			throw new Error("Not enough coins");
 		}
 
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.mergeAndSplit(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, availableInstances.map(instance => instance.ref).slice(0, 500), toSplit);
 	}
 
@@ -407,7 +418,7 @@ export class DaoClient extends AccountSDK {
 		capType: string,
 		capObject: TransactionObjectInput,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.depositCap(tx, DAO_CONFIG_TYPE, capType, auth, this.dao.id, capObject);
 	}
 
@@ -416,7 +427,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		newName: string,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.replaceMetadata(tx, DAO_CONFIG_TYPE, auth, this.dao.id, ["name"], [newName]);
 	}
 
@@ -424,7 +435,7 @@ export class DaoClient extends AccountSDK {
 	updateVerifiedDeps(
 		tx: Transaction,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.updateVerifiedDepsToLatest(tx, DAO_CONFIG_TYPE, auth, this.dao.id);
 	}
 
@@ -434,7 +445,7 @@ export class DaoClient extends AccountSDK {
 		coinType: string,
 		treasuryCap: TransactionObjectInput,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.depositTreasuryCap(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryCap);
 	}
 
@@ -443,7 +454,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		kioskName: string,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.openKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, kioskName);
 	}
 
@@ -475,7 +486,7 @@ export class DaoClient extends AccountSDK {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const request = commands.placeInKiosk(tx, DAO_CONFIG_TYPE, nftType, auth, this.dao.id, accountKioskId, senderKiosk, senderCap, policyId, kioskName, nftId);
 		return tx.moveCall({
 			target: `${SUI_FRAMEWORK}::transfer_policy::confirm_request`,
@@ -496,7 +507,7 @@ export class DaoClient extends AccountSDK {
 		// get the nft type from the nft id
 		const nftType = this.getKiosks().assets[kioskName].items.find(item => item.id === nftId)?.type;
 		if (!nftType) throw new Error("NFT not found in kiosk");
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.delistFromKiosk(tx, DAO_CONFIG_TYPE, nftType, auth, this.dao.id, accountKioskId, kioskName, nftId);
 	}
 
@@ -508,7 +519,7 @@ export class DaoClient extends AccountSDK {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.withdrawProfitsFromKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, accountKioskId, kioskName);
 	}
 
@@ -520,7 +531,7 @@ export class DaoClient extends AccountSDK {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.closeKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, accountKioskId, kioskName);
 	}
 
@@ -531,7 +542,7 @@ export class DaoClient extends AccountSDK {
 		upgradeCap: TransactionObjectInput,
 		timeLockDelayMs: bigint,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.depositUpgradeCap(tx, DAO_CONFIG_TYPE, auth, this.dao.id, upgradeCap, packageName, timeLockDelayMs);
 	}
 
@@ -540,7 +551,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		treasuryName: string,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.openVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
 	}
 
@@ -551,7 +562,7 @@ export class DaoClient extends AccountSDK {
 		treasuryName: string,
 		coin: TransactionObjectInput,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.depositFromWallet(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryName, coin);
 	}
 
@@ -560,7 +571,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		treasuryName: string,
 	): TransactionResult {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		return commands.closeVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
 	}
 
@@ -577,7 +588,7 @@ export class DaoClient extends AccountSDK {
 		minimumVotes: bigint,
 		votingQuorum: bigint,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -597,7 +608,7 @@ export class DaoClient extends AccountSDK {
 		intentArgs: VoteIntentArgs,
 		deps: Dep[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -616,7 +627,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -636,7 +647,7 @@ export class DaoClient extends AccountSDK {
 		intentArgs: VoteIntentArgs,
 		capType: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -662,7 +673,7 @@ export class DaoClient extends AccountSDK {
 		updateDescription: boolean,
 		updateIcon: boolean,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -686,7 +697,7 @@ export class DaoClient extends AccountSDK {
 		newDescription: string | null,
 		newIconUrl: string | null,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -707,7 +718,7 @@ export class DaoClient extends AccountSDK {
 		coinType: string,
 		transfers: { amount: bigint, recipient: string }[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -731,7 +742,7 @@ export class DaoClient extends AccountSDK {
 		end: bigint,
 		recipient: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -752,7 +763,7 @@ export class DaoClient extends AccountSDK {
 		coinType: string,
 		amount: bigint,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -776,7 +787,7 @@ export class DaoClient extends AccountSDK {
 		nftIds: string[],
 		recipient: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -797,7 +808,7 @@ export class DaoClient extends AccountSDK {
 		kioskName: string,
 		listings: { nftId: string, price: bigint }[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -819,7 +830,7 @@ export class DaoClient extends AccountSDK {
 		coinAmount: bigint,
 		vaultName: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -848,7 +859,7 @@ export class DaoClient extends AccountSDK {
 		objectIds: string[],
 		recipient: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -881,7 +892,7 @@ export class DaoClient extends AccountSDK {
 		intentArgs: VoteIntentArgs,
 		drops: {objectId: string, recipient: string}[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -903,7 +914,7 @@ export class DaoClient extends AccountSDK {
 		coinType: string,
 		drops: {recipient: string, amount: bigint}[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -933,7 +944,7 @@ export class DaoClient extends AccountSDK {
 		end: bigint,
 		recipient: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -961,7 +972,7 @@ export class DaoClient extends AccountSDK {
 		packageName: string,
 		digest: number[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -982,7 +993,7 @@ export class DaoClient extends AccountSDK {
 		packageName: string,
 		policy: typeof Policy[keyof typeof Policy],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -1004,7 +1015,7 @@ export class DaoClient extends AccountSDK {
 		coinType: string,
 		transfers: { amount: bigint, recipient: string }[],
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
@@ -1029,7 +1040,7 @@ export class DaoClient extends AccountSDK {
 		end: bigint,
 		recipient: string,
 	) {
-		const auth = this.dao.authenticate(tx);
+		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
