@@ -3,7 +3,7 @@ import { normalizeStructTag } from "@mysten/sui/utils";
 
 import { Vote, Staked } from "./types";
 import { ACCOUNT_DAO } from "./constants";
-import { coinWithBalance, Transaction, TransactionArgument, TransactionObjectInput } from "@mysten/sui/transactions";
+import { coinWithBalance, Transaction, TransactionArgument } from "@mysten/sui/transactions";
 // import { mergeStakedCoin, mergeStakedObject, newStakedCoin, newStakedObject, stakeCoin, stakeObject, unstake, splitStakedCoin } from "src/.gen/account-dao/dao/functions";
 import { CLOCK } from "@account.tech/core";
 

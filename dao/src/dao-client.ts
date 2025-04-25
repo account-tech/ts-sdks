@@ -4,7 +4,7 @@ import {
 	ActionsArgs, Invite, Profile, ActionsIntentTypes, Policy,
 } from "@account.tech/core";
 import {
-	BorrowCapIntent,
+	BorrowCapIntent, EmptyIntent,
 	UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 	TakeNftsIntent, ListNftsIntent,
 	UpgradePackageIntent, RestrictPolicyIntent,
@@ -44,7 +44,7 @@ export class DaoClient extends AccountSDK {
 				ownedObjects: true,
 				assetFactory: [Caps, Currencies, Kiosks, Packages, Vaults],
 				intentFactory: [
-					BorrowCapIntent,
+					BorrowCapIntent, EmptyIntent,
 					UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 					TakeNftsIntent, ListNftsIntent,
 					UpgradePackageIntent, RestrictPolicyIntent,
@@ -104,7 +104,7 @@ export class DaoClient extends AccountSDK {
 		let createdUser: TransactionPureInput | null = null;
 		if (userId === "") {
 			if (!newUser) throw new Error("User must create an user before creating a multisig");
-			createdUser = this.user.createUser(tx); // TODO: add optional params for username and avatar 
+			createdUser = this.user.createUser(tx, newUser.username, newUser.profilePicture); 
 			userId = tx.moveCall({
 				target: `${SUI_FRAMEWORK}::object::id`,
 				typeArguments: [`${ACCOUNT_PROTOCOL.V1}::user::User`],
@@ -155,7 +155,7 @@ export class DaoClient extends AccountSDK {
 	execute(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult {
+	): TransactionResult | void {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
 		// not optimal, but we need to get the object types to execute the intent
@@ -407,26 +407,26 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		capType: string,
 		capObject: TransactionObjectInput,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.depositCap(tx, DAO_CONFIG_TYPE, capType, auth, this.dao.id, capObject);
+		commands.depositCap(tx, DAO_CONFIG_TYPE, capType, auth, this.dao.id, capObject);
 	}
 
 	/// Modifies the name of the Account
 	modifyName(
 		tx: Transaction,
 		newName: string,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.replaceMetadata(tx, DAO_CONFIG_TYPE, auth, this.dao.id, ["name"], [newName]);
+		commands.replaceMetadata(tx, DAO_CONFIG_TYPE, auth, this.dao.id, ["name"], [newName]);
 	}
 
 	/// Updates the verified deps to the latest version
 	updateVerifiedDeps(
 		tx: Transaction,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.updateVerifiedDepsToLatest(tx, DAO_CONFIG_TYPE, auth, this.dao.id);
+		commands.updateVerifiedDepsToLatest(tx, DAO_CONFIG_TYPE, auth, this.dao.id);
 	}
 
 	/// Deposits and locks a TreasuryCap object in the Account
@@ -434,18 +434,18 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		coinType: string,
 		treasuryCap: TransactionObjectInput,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.depositTreasuryCap(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryCap);
+		commands.depositTreasuryCap(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryCap);
 	}
 
 	/// Opens a Kiosk in the Account
 	openKiosk(
 		tx: Transaction,
 		kioskName: string,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.openKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, kioskName);
+		commands.openKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, kioskName);
 	}
 
 	/// Places an NFT in a Kiosk managed by the Account
@@ -456,7 +456,7 @@ export class DaoClient extends AccountSDK {
 		senderCap: TransactionObjectInput,
 		kioskName: string,
 		nftId: string,
-	): Promise<TransactionResult> {
+	) {
 		const policies = await this.getKiosks().kioskClient.getTransferPolicies({ type: nftType });
 		// find a correct policy
 		let policyId = "";
@@ -477,12 +477,7 @@ export class DaoClient extends AccountSDK {
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.authenticate(tx);
-		const request = commands.placeInKiosk(tx, DAO_CONFIG_TYPE, nftType, auth, this.dao.id, accountKioskId, senderKiosk, senderCap, policyId, kioskName, nftId);
-		return tx.moveCall({
-			target: `${SUI_FRAMEWORK}::transfer_policy::confirm_request`,
-			typeArguments: [nftType],
-			arguments: [tx.object(policyId), request],
-		});
+		commands.placeInKiosk(tx, DAO_CONFIG_TYPE, nftType, auth, this.dao.id, accountKioskId, senderKiosk, senderCap, policyId, kioskName, nftId);
 	}
 
 	/// Delists an NFT from a Kiosk managed by the Account
@@ -490,7 +485,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		kioskName: string,
 		nftId: string,
-	): TransactionResult {
+	) {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
@@ -498,31 +493,31 @@ export class DaoClient extends AccountSDK {
 		const nftType = this.getKiosks().assets[kioskName].items.find(item => item.id === nftId)?.type;
 		if (!nftType) throw new Error("NFT not found in kiosk");
 		const auth = this.authenticate(tx);
-		return commands.delistFromKiosk(tx, DAO_CONFIG_TYPE, nftType, auth, this.dao.id, accountKioskId, kioskName, nftId);
+		commands.delistFromKiosk(tx, DAO_CONFIG_TYPE, nftType, auth, this.dao.id, accountKioskId, kioskName, nftId);
 	}
 
 	/// Withdraws the profits from a Kiosk managed by the Account
 	withdrawProfitsFromKiosk(
 		tx: Transaction,
 		kioskName: string,
-	): TransactionResult {
+	) {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.authenticate(tx);
-		return commands.withdrawProfitsFromKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, accountKioskId, kioskName);
+		commands.withdrawProfitsFromKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, accountKioskId, kioskName);
 	}
 
 	/// Closes an empty Kiosk managed by the Account
 	closeKiosk(
 		tx: Transaction,
 		kioskName: string,
-	): TransactionResult {
+	) {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.authenticate(tx);
-		return commands.closeKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, accountKioskId, kioskName);
+		commands.closeKiosk(tx, DAO_CONFIG_TYPE, auth, this.dao.id, accountKioskId, kioskName);
 	}
 
 	/// Deposits and locks an UpgradeCap object in the Account
@@ -531,18 +526,18 @@ export class DaoClient extends AccountSDK {
 		packageName: string,
 		upgradeCap: TransactionObjectInput,
 		timeLockDelayMs: bigint,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.depositUpgradeCap(tx, DAO_CONFIG_TYPE, auth, this.dao.id, upgradeCap, packageName, timeLockDelayMs);
+		commands.depositUpgradeCap(tx, DAO_CONFIG_TYPE, auth, this.dao.id, upgradeCap, packageName, timeLockDelayMs);
 	}
 
 	/// Opens a Treasury in the Account
 	openVault(
 		tx: Transaction,
 		treasuryName: string,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.openVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
+		commands.openVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
 	}
 
 	/// Deposits an object into the Treasury from the caller wallet
@@ -551,21 +546,39 @@ export class DaoClient extends AccountSDK {
 		coinType: string,
 		treasuryName: string,
 		coin: TransactionObjectInput,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.depositFromWallet(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryName, coin);
+		commands.depositFromWallet(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryName, coin);
 	}
 
 	/// Closes an empty Treasury managed by the Account
 	closeVault(
 		tx: Transaction,
 		treasuryName: string,
-	): TransactionResult {
+	) {
 		const auth = this.authenticate(tx);
-		return commands.closeVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
+		commands.closeVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
 	}
 
 	// === Intents ===
+
+	requestEmpty(
+		tx: Transaction,
+		intentArgs: VoteIntentArgs,
+	) {
+		const auth = this.authenticate(tx);
+		const params = Intent.createParams(tx, intentArgs);
+		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
+
+		EmptyIntent.prototype.request(
+			tx,
+			DAO_GENERICS,
+			auth,
+			this.dao.id,
+			params,
+			outcome,
+		);
+	}
 
 	requestConfigDao(
 		tx: Transaction,
@@ -1052,7 +1065,7 @@ export class DaoClient extends AccountSDK {
 		caller: string,
 		intentKey: string,
 		useCap: (cap: TransactionObjectInput) => void,
-	): TransactionResult {
+	) {
 		const intent = this.getIntent(intentKey) as BorrowCapIntent;
 
 		// borrow the cap
@@ -1063,12 +1076,11 @@ export class DaoClient extends AccountSDK {
 
 		// return the cap
 		intent.return(tx, DAO_GENERICS, executable, cap);
-		let result = intent.completeExecution(tx, DAO_GENERICS, executable);
+		intent.completeExecution(tx, DAO_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, DAO_GENERICS, intentKey);
+			intent.clearEmpty(tx, DAO_GENERICS, intentKey);
 		}
-		return result;
 	}
 
 	executeUpgradePackage(
@@ -1078,7 +1090,7 @@ export class DaoClient extends AccountSDK {
 		packageId: string,
 		modules: string[],
 		dependencies: string[],
-	): TransactionResult {
+	) {
 		const intent = this.getIntent(intentKey) as UpgradePackageIntent;
 
 		// borrow the cap
@@ -1095,12 +1107,11 @@ export class DaoClient extends AccountSDK {
 
 		// return the cap
 		intent.commit(tx, DAO_GENERICS, executable, receipt);
-		let result = intent.completeExecution(tx, DAO_GENERICS, executable);
+		intent.completeExecution(tx, DAO_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, DAO_GENERICS, intentKey);
+			intent.clearEmpty(tx, DAO_GENERICS, intentKey);
 		}
-		return result;
 	}
 }
 
