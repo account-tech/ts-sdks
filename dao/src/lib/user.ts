@@ -3,7 +3,7 @@ import { normalizeStructTag } from "@mysten/sui/utils";
 
 import { Vote, Staked } from "./types";
 import { ACCOUNT_DAO } from "./constants";
-import { coinWithBalance, Transaction, TransactionArgument, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { coinWithBalance, Transaction, TransactionArgument, TransactionObjectInput } from "@mysten/sui/transactions";
 // import { mergeStakedCoin, mergeStakedObject, newStakedCoin, newStakedObject, stakeCoin, stakeObject, unstake, splitStakedCoin } from "src/.gen/account-dao/dao/functions";
 import { CLOCK } from "@account.tech/core";
 
@@ -163,7 +163,7 @@ export class Participant {
         
         this.mergeAllStaked(tx);
         // if there is no staked object, we need to create a new one
-        let staked: TransactionObjectInput | undefined;
+        let staked: TransactionArgument;
         if (this.staked.length == 0) {
             staked = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::new_staked_coin`,
@@ -171,13 +171,13 @@ export class Participant {
                 arguments: [tx.object(this.daoAddr)]
             });
         } else {
-            staked = this.staked[0].id;
+            staked = tx.object(this.staked[0].id);
         }
         // stake new coin 
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::stake_coin`,
             typeArguments: [this.getCoinType()],
-            arguments: [tx.object(staked), coinWithBalance({ type: this.getCoinType(), balance: amount })]
+            arguments: [staked, coinWithBalance({ type: this.getCoinType(), balance: amount })]
         });
         // transfer staked if it has been created
         if (this.staked.length == 0) {
@@ -195,7 +195,7 @@ export class Participant {
         
         this.mergeAllStaked(tx);
         // if there is no staked object, we need to create a new one
-        let staked: TransactionObjectInput | undefined;
+        let staked: TransactionArgument;
         if (this.staked.length == 0) {
             staked = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::new_staked_object`,
@@ -203,14 +203,14 @@ export class Participant {
                 arguments: [tx.object(this.daoAddr)]
             });
         } else {
-            staked = this.staked[0].id;
+            staked = tx.object(this.staked[0].id);
         }
         // stake new nfts
         nftIds.forEach((id) => {
             tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::stake_object`,
                 typeArguments: [this.assetType],
-                arguments: [tx.object(staked), tx.object(id)]
+                arguments: [staked, tx.object(id)]
             });
         });
         // transfer staked if it has been created
@@ -219,7 +219,7 @@ export class Participant {
         }
     }
 
-    unstakeCoins(tx: Transaction, amount: bigint): TransactionResult {
+    unstakeCoins(tx: Transaction, amount: bigint): TransactionArgument {
         if (!this.isCoin()) {
             throw new Error("Asset is not a coin");
         }
@@ -228,12 +228,17 @@ export class Participant {
         }
 
         this.mergeAllStaked(tx);
-        // split staked coin with the amount to unstake
-        const to_unstake = tx.moveCall({
-            target: `${ACCOUNT_DAO.V1}::dao::split_staked_coin`,
-            typeArguments: [this.getCoinType()],
-            arguments: [tx.object(this.staked[0].id), tx.pure.u64(amount)]
-        });
+        // split staked coin with the amount to unstake if necessary
+        let to_unstake: TransactionArgument;
+        if (amount < this.staked.reduce((acc, staked) => acc + staked.value, 0n)) {
+            to_unstake = tx.moveCall({
+                target: `${ACCOUNT_DAO.V1}::dao::split_staked_coin`,
+                typeArguments: [this.getCoinType()],
+                arguments: [tx.object(this.staked[0].id), tx.pure.u64(amount)]
+            });
+        } else {
+            to_unstake = tx.object(this.staked[0].id);
+        }
         // start unstake process for newly created staked coin
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::unstake`,
@@ -244,7 +249,7 @@ export class Participant {
         return to_unstake;
     }
 
-    unstakeNfts(tx: Transaction, nftIds: string[]) {
+    unstakeNfts(tx: Transaction, nftIds: string[]): TransactionArgument {
         if (this.isCoin()) {
             throw new Error("Asset is a coin");
         }
@@ -253,12 +258,17 @@ export class Participant {
         }
 
         this.mergeAllStaked(tx);
-        // stake new coin
-        const to_unstake = tx.moveCall({
-            target: `${ACCOUNT_DAO.V1}::dao::split_staked_object`,
-            typeArguments: [this.assetType],
-            arguments: [tx.object(this.staked[0].id), tx.pure.vector("id", nftIds)]
-        });
+        // split staked object with the nft ids to unstake if necessary
+        let to_unstake: TransactionArgument;
+        if (nftIds.length < this.staked.reduce((acc, staked) => acc + staked.value, 0n)) {
+            to_unstake = tx.moveCall({
+                target: `${ACCOUNT_DAO.V1}::dao::split_staked_object`,
+                typeArguments: [this.assetType],
+                arguments: [tx.object(this.staked[0].id), tx.pure.vector("id", nftIds)]
+            });
+        } else {
+            to_unstake = tx.object(this.staked[0].id);
+        }
         // start unstake process for newly created staked object
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::unstake`,
@@ -293,59 +303,6 @@ export class Participant {
     //**************************************************************************************************//
     // Voting                                                                                           //
     //**************************************************************************************************//
-
-    // stakeAndVote(tx: Transaction, intentKey: string, answer: number, assets: bigint | string[]) {
-    //     let staked: TransactionResult | undefined;
-    //     if (this.isCoin()) {
-    //         staked = tx.moveCall({
-    //             target: `${ACCOUNT_DAO.V1}::dao::new_staked_coin`,
-    //             typeArguments: [this.getCoinType()],
-    //             arguments: [tx.object(this.daoAddr)]
-    //         });
-    //         tx.moveCall({
-    //             target: `${ACCOUNT_DAO.V1}::dao::stake_coin`,
-    //             typeArguments: [this.getCoinType()],
-    //             arguments: [staked, coinWithBalance({ type: this.getCoinType(), balance: assets as bigint })]
-    //         });
-    //     } else {
-    //         staked = tx.moveCall({
-    //             target: `${ACCOUNT_DAO.V1}::dao::new_staked_object`,
-    //             typeArguments: [this.assetType],
-    //             arguments: [tx.object(this.daoAddr)]
-    //         });
-    //         (assets as string[]).forEach((id) => {
-    //             tx.moveCall({
-    //                 target: `${ACCOUNT_DAO.V1}::dao::stake_object`,
-    //                 typeArguments: [this.assetType],
-    //                 arguments: [staked!, tx.object(id)]
-    //             });
-    //         });
-    //     }
-
-    //     const vote = tx.moveCall({
-    //         target: `${ACCOUNT_DAO.V1}::dao::new_vote`,
-    //         typeArguments: [this.assetType],
-    //         arguments: [
-    //             tx.object(this.daoAddr), 
-    //             tx.pure.string(intentKey), 
-    //             staked, 
-    //             tx.object(CLOCK)
-    //         ]
-    //     });
-
-    //     tx.moveCall({
-    //         target: `${ACCOUNT_DAO.V1}::dao::vote`,
-    //         typeArguments: [this.assetType],
-    //         arguments: [
-    //             vote, 
-    //             tx.object(this.daoAddr), 
-    //             tx.pure.u8(answer), 
-    //             tx.object(CLOCK)
-    //         ]
-    //     });
-
-    //     tx.transferObjects([vote], this.userAddr);
-    // }
 
     vote(tx: Transaction, intentKey: string, answer: number) {
         this.mergeAllStaked(tx);
