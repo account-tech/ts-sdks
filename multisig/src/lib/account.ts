@@ -11,7 +11,7 @@ import { DepFields } from "../.gen/account-protocol/deps/structs";
 import { MemberFields, RoleFields } from "../.gen/account-multisig/multisig/structs";
 import { Fees as FeesRaw } from "../.gen/account-multisig/fees/structs";
 
-import { User, Account, Intent, Dep, ConfigDepsArgs, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK, TransactionPureInput } from "@account.tech/core";
+import { User, Account, Intent, Dep, ConfigDepsArgs, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
 import { Role, MemberProfile, MultisigData, ConfigMultisigArgs } from "./types";
 import { MULTISIG_FEES, MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./constants";
 

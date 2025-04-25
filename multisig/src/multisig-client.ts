@@ -72,7 +72,7 @@ export class MultisigClient extends AccountSDK {
 		newUser?: { username: string, profilePicture: string },
 		memberAddresses?: string[],
 		globalThreshold?: number,
-	): TransactionResult {
+	) {
 		// create the user if the user doesn't have one
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
@@ -109,7 +109,7 @@ export class MultisigClient extends AccountSDK {
 		// transfer the user if just created
 		if (createdUser) this.user.transferUser(tx, createdUser, this.user.address!);
 		// share the multisig
-		return this.multisig?.shareMultisig(tx, multisig);
+		this.multisig?.shareMultisig(tx, multisig);
 	}
 
 	/// Factory function to call the appropriate request function
@@ -118,7 +118,7 @@ export class MultisigClient extends AccountSDK {
 		intentType: string, // TypeName of the intent
 		intentArgs: IntentArgs,
 		actionsArgs: ActionsArgs,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -128,23 +128,23 @@ export class MultisigClient extends AccountSDK {
 		const method = intentClass.prototype.request;
 		method.call(intentClass, tx, MULTISIG_GENERICS, auth, this.multisig.id, params, outcome, actionsArgs);
 		// directly approve after proposing
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	/// Approves a intent
 	approve(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult {
-		return this.multisig.approveIntent(tx, intentKey, this.multisig.id);
+	) {
+		this.multisig.approveIntent(tx, intentKey, this.multisig.id);
 	}
 
 	/// Removes approval from a intent
 	disapprove(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult {
-		return this.multisig.disapproveIntent(tx, intentKey, this.multisig.id);
+	) {
+		this.multisig.disapproveIntent(tx, intentKey, this.multisig.id);
 	}
 
 	/// Calls the execute function for the intent, approve if not already done
@@ -152,7 +152,7 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		caller: string,
 		intentKey: string
-	): TransactionResult {
+	) {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
 		// not optimal, but we need to get the object types to execute the intent
@@ -168,7 +168,7 @@ export class MultisigClient extends AccountSDK {
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
 		const executable = this.multisig.executeIntent(tx, intentKey);
 		
-		let result = intent.execute(tx, MULTISIG_GENERICS, executable);
+		intent.execute(tx, MULTISIG_GENERICS, executable);
 
 		// send invites to added members
 		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
@@ -185,9 +185,8 @@ export class MultisigClient extends AccountSDK {
 		intent.completeExecution(tx, MULTISIG_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
+			intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
 		}
-		return result;
 	}
 
 	/// Deletes a intent if it has expired
@@ -202,20 +201,26 @@ export class MultisigClient extends AccountSDK {
 		intent.deleteExpired(tx, MULTISIG_GENERICS, intentKey);
 	}
 
-	acceptInvite(tx: Transaction, invite: TransactionObjectInput): TransactionResult {
+	acceptInvite(tx: Transaction, invite: TransactionObjectInput) {
 		let user: TransactionObjectInput = this.user.id;
 		if (user === "") {
 			user = this.user.createUser(tx);
 		}
-		return this.user.acceptInvite(tx, user, invite);
+		
+		this.user.acceptInvite(tx, user, invite);
+
+		// if the user has been created, transfer it to the user address
+		if (typeof user !== "string") {
+			this.user.transferUser(tx, user, this.user.address!);
+		}
 	}
 
-	refuseInvite(tx: Transaction, invite: TransactionObjectInput): TransactionResult {
-		return this.user.refuseInvite(tx, invite);
+	refuseInvite(tx: Transaction, invite: TransactionObjectInput) {
+		this.user.refuseInvite(tx, invite);
 	}
 
 	reorderMultisigs(tx: Transaction, multisigAddrs: string[]) {
-		return this.user.reorderAccounts(tx, this.user.id, MULTISIG_CONFIG_TYPE, multisigAddrs);
+		this.user.reorderAccounts(tx, this.user.id, MULTISIG_CONFIG_TYPE, multisigAddrs);
 	}
 
 	// === Getters ===
@@ -399,26 +404,26 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		capType: string,
 		capObject: TransactionObjectInput,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.depositCap(tx, MULTISIG_CONFIG_TYPE, capType, auth, this.multisig.id, capObject);
+		commands.depositCap(tx, MULTISIG_CONFIG_TYPE, capType, auth, this.multisig.id, capObject);
 	}
 
 	/// Modifies the name of the Account
 	modifyName(
 		tx: Transaction,
 		newName: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.replaceMetadata(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, ["name"], [newName]);
+		commands.replaceMetadata(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, ["name"], [newName]);
 	}
 
 	/// Updates the verified deps to the latest version
 	updateVerifiedDeps(
 		tx: Transaction,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.updateVerifiedDepsToLatest(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id);
+		commands.updateVerifiedDepsToLatest(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id);
 	}
 
 	/// Deposits and locks a TreasuryCap object in the Account
@@ -426,18 +431,18 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		coinType: string,
 		treasuryCap: TransactionObjectInput,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.depositTreasuryCap(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, treasuryCap);
+		commands.depositTreasuryCap(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, treasuryCap);
 	}
 
 	/// Opens a Kiosk in the Account
 	openKiosk(
 		tx: Transaction,
 		kioskName: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.openKiosk(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, kioskName);
+		commands.openKiosk(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, kioskName);
 	}
 
 	/// Places an NFT in a Kiosk managed by the Account
@@ -448,7 +453,7 @@ export class MultisigClient extends AccountSDK {
 		senderCap: TransactionObjectInput,
 		kioskName: string,
 		nftId: string,
-	): Promise<TransactionResult> {
+	) {
 		const policies = await this.getKiosks().kioskClient.getTransferPolicies({ type: nftType });
 		// find a correct policy
 		let policyId = "";
@@ -470,7 +475,7 @@ export class MultisigClient extends AccountSDK {
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.multisig.authenticate(tx);
 		const request = commands.placeInKiosk(tx, MULTISIG_CONFIG_TYPE, nftType, auth, this.multisig.id, accountKioskId, senderKiosk, senderCap, policyId, kioskName, nftId);
-		return tx.moveCall({
+		tx.moveCall({
 			target: `${SUI_FRAMEWORK}::transfer_policy::confirm_request`,
 			typeArguments: [nftType],
 			arguments: [tx.object(policyId), request],
@@ -482,7 +487,7 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		kioskName: string,
 		nftId: string,
-	): TransactionResult {
+	) {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
@@ -490,31 +495,31 @@ export class MultisigClient extends AccountSDK {
 		const nftType = this.getKiosks().assets[kioskName].items.find(item => item.id === nftId)?.type;
 		if (!nftType) throw new Error("NFT not found in kiosk");
 		const auth = this.multisig.authenticate(tx);
-		return commands.delistFromKiosk(tx, MULTISIG_CONFIG_TYPE, nftType, auth, this.multisig.id, accountKioskId, kioskName, nftId);
+		commands.delistFromKiosk(tx, MULTISIG_CONFIG_TYPE, nftType, auth, this.multisig.id, accountKioskId, kioskName, nftId);
 	}
 
 	/// Withdraws the profits from a Kiosk managed by the Account
 	withdrawProfitsFromKiosk(
 		tx: Transaction,
 		kioskName: string,
-	): TransactionResult {
+	) {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.multisig.authenticate(tx);
-		return commands.withdrawProfitsFromKiosk(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, accountKioskId, kioskName);
+		commands.withdrawProfitsFromKiosk(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, accountKioskId, kioskName);
 	}
 
 	/// Closes an empty Kiosk managed by the Account
 	closeKiosk(
 		tx: Transaction,
 		kioskName: string,
-	): TransactionResult {
+	) {
 		// get the account kiosk from its name 
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.multisig.authenticate(tx);
-		return commands.closeKiosk(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, accountKioskId, kioskName);
+		commands.closeKiosk(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, accountKioskId, kioskName);
 	}
 
 	/// Deposits and locks an UpgradeCap object in the Account
@@ -523,18 +528,18 @@ export class MultisigClient extends AccountSDK {
 		packageName: string,
 		upgradeCap: TransactionObjectInput,
 		timeLockDelayMs: bigint,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.depositUpgradeCap(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, upgradeCap, packageName, timeLockDelayMs);
+		commands.depositUpgradeCap(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, upgradeCap, packageName, timeLockDelayMs);
 	}
 
 	/// Opens a Treasury in the Account
 	openVault(
 		tx: Transaction,
 		treasuryName: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.openVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, treasuryName);
+		commands.openVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, treasuryName);
 	}
 
 	/// Deposits an object into the Treasury from the caller wallet
@@ -543,18 +548,18 @@ export class MultisigClient extends AccountSDK {
 		coinType: string,
 		treasuryName: string,
 		coin: TransactionObjectInput,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.depositFromWallet(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, treasuryName, coin);
+		commands.depositFromWallet(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, treasuryName, coin);
 	}
 
 	/// Closes an empty Treasury managed by the Account
 	closeVault(
 		tx: Transaction,
 		treasuryName: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
-		return commands.closeVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, treasuryName);
+		commands.closeVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, treasuryName);
 	}
 
 	// === Intents ===
@@ -565,7 +570,7 @@ export class MultisigClient extends AccountSDK {
 		globalThreshold: number,
 		roleThresholds: Threshold[],
 		members: Member[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -580,14 +585,14 @@ export class MultisigClient extends AccountSDK {
 			{ members, thresholds: { global: globalThreshold, roles: roleThresholds } },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestConfigDeps(
 		tx: Transaction,
 		intentArgs: IntentArgs,
 		deps: Dep[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -602,13 +607,13 @@ export class MultisigClient extends AccountSDK {
 			{ deps },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestToggleUnverifiedDepsAllowed(
 		tx: Transaction,
 		intentArgs: IntentArgs,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -623,14 +628,14 @@ export class MultisigClient extends AccountSDK {
 			{}
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestBorrowCap(
 		tx: Transaction,
 		intentArgs: IntentArgs,
 		capType: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -645,7 +650,7 @@ export class MultisigClient extends AccountSDK {
 			{ capType },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestDisableRules(
@@ -658,7 +663,7 @@ export class MultisigClient extends AccountSDK {
 		updateName: boolean,
 		updateDescription: boolean,
 		updateIcon: boolean,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -673,7 +678,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinType, mint, burn, updateSymbol, updateName, updateDescription, updateIcon },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestUpdateMetadata(
@@ -684,7 +689,7 @@ export class MultisigClient extends AccountSDK {
 		newSymbol: string | null,
 		newDescription: string | null,
 		newIconUrl: string | null,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -699,7 +704,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinType, newName, newSymbol, newDescription, newIconUrl },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestMintAndTransfer(
@@ -707,7 +712,7 @@ export class MultisigClient extends AccountSDK {
 		intentArgs: IntentArgs,
 		coinType: string,
 		transfers: { amount: bigint, recipient: string }[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -722,7 +727,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinType, transfers },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestMintAndVest(
@@ -733,7 +738,7 @@ export class MultisigClient extends AccountSDK {
 		start: bigint,
 		end: bigint,
 		recipient: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -748,7 +753,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinType, amount, start, end, recipient },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestWithdrawAndBurn(
@@ -756,7 +761,7 @@ export class MultisigClient extends AccountSDK {
 		intentArgs: IntentArgs,
 		coinType: string,
 		amount: bigint,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -773,7 +778,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinType, coinId, amount },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestTakeNfts(
@@ -782,7 +787,7 @@ export class MultisigClient extends AccountSDK {
 		kioskName: string,
 		nftIds: string[],
 		recipient: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -797,7 +802,7 @@ export class MultisigClient extends AccountSDK {
 			{ kioskName, nftIds, recipient },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestListNfts(
@@ -805,7 +810,7 @@ export class MultisigClient extends AccountSDK {
 		intentArgs: IntentArgs,
 		kioskName: string,
 		listings: { nftId: string, price: bigint }[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -820,7 +825,7 @@ export class MultisigClient extends AccountSDK {
 			{ kioskName, listings },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestWithdrawAndTransferToVault(
@@ -829,7 +834,7 @@ export class MultisigClient extends AccountSDK {
 		coinType: string,
 		coinAmount: bigint,
 		vaultName: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -851,7 +856,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinType, coinId, coinAmount, vaultName },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestWithdrawAndTransfer(
@@ -860,7 +865,7 @@ export class MultisigClient extends AccountSDK {
 		coins: { coinType: string, coinAmount: bigint }[],
 		objectIds: string[],
 		recipient: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -887,7 +892,7 @@ export class MultisigClient extends AccountSDK {
 			{ transfers },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	// optimized version of withdrawAndTransfer for airdropping objects with same type to multiple recipients
@@ -895,7 +900,7 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		intentArgs: IntentArgs,
 		drops: {objectId: string, recipient: string}[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -910,7 +915,7 @@ export class MultisigClient extends AccountSDK {
 			{ transfers: drops },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	// optimized version of withdrawAndTransfer for airdropping coins to multiple recipients
@@ -919,7 +924,7 @@ export class MultisigClient extends AccountSDK {
 		intentArgs: IntentArgs,
 		coinType: string,
 		drops: {recipient: string, amount: bigint}[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -940,7 +945,7 @@ export class MultisigClient extends AccountSDK {
 			],
 		});
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestWithdrawAndVest(
@@ -951,7 +956,7 @@ export class MultisigClient extends AccountSDK {
 		start: bigint,
 		end: bigint,
 		recipient: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -973,7 +978,7 @@ export class MultisigClient extends AccountSDK {
 			{ coinId, start, end, recipient },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestUpgradePackage(
@@ -981,7 +986,7 @@ export class MultisigClient extends AccountSDK {
 		intentArgs: IntentArgs,
 		packageName: string,
 		digest: number[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -996,7 +1001,7 @@ export class MultisigClient extends AccountSDK {
 			{ packageName, digest },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestRestrictPolicy(
@@ -1004,7 +1009,7 @@ export class MultisigClient extends AccountSDK {
 		intentArgs: IntentArgs,
 		packageName: string,
 		policy: typeof Policy[keyof typeof Policy],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -1019,7 +1024,7 @@ export class MultisigClient extends AccountSDK {
 			{ packageName, policy },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestSpendAndTransfer(
@@ -1028,7 +1033,7 @@ export class MultisigClient extends AccountSDK {
 		treasuryName: string,
 		coinType: string,
 		transfers: { amount: bigint, recipient: string }[],
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -1043,7 +1048,7 @@ export class MultisigClient extends AccountSDK {
 			{ treasuryName, coinType, transfers },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	requestSpendAndVest(
@@ -1055,7 +1060,7 @@ export class MultisigClient extends AccountSDK {
 		start: bigint,
 		end: bigint,
 		recipient: string,
-	): TransactionResult {
+	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
@@ -1070,7 +1075,7 @@ export class MultisigClient extends AccountSDK {
 			{ treasuryName, coinType, amount, start, end, recipient },
 		);
 
-		return this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
+		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
 	/// === Custom executors ===
@@ -1080,7 +1085,7 @@ export class MultisigClient extends AccountSDK {
 		caller: string,
 		intentKey: string,
 		useCap: (cap: TransactionObjectInput) => void,
-	): TransactionResult {
+	) {
 		const intent = this.getIntent(intentKey) as BorrowCapIntent;
 		// approve if necessary
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
@@ -1093,12 +1098,11 @@ export class MultisigClient extends AccountSDK {
 
 		// return the cap
 		intent.return(tx, MULTISIG_GENERICS, executable, cap);
-		let result = intent.completeExecution(tx, MULTISIG_GENERICS, executable);
+		intent.completeExecution(tx, MULTISIG_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
+			intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
 		}
-		return result;
 	}
 
 	executeUpgradePackage(
@@ -1108,7 +1112,7 @@ export class MultisigClient extends AccountSDK {
 		packageId: string,
 		modules: string[],
 		dependencies: string[],
-	): TransactionResult {
+	) {
 		const intent = this.getIntent(intentKey) as UpgradePackageIntent;
 		// approve if necessary
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
@@ -1127,12 +1131,11 @@ export class MultisigClient extends AccountSDK {
 
 		// return the cap
 		intent.commit(tx, MULTISIG_GENERICS, executable, receipt);
-		let result = intent.completeExecution(tx, MULTISIG_GENERICS, executable);
+		intent.completeExecution(tx, MULTISIG_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
+			intent.clearEmpty(tx, MULTISIG_GENERICS, intentKey);
 		}
-		return result;
 	}
 }
 
