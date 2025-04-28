@@ -20,10 +20,12 @@ import { DAO_GENERICS, DAO_CONFIG_TYPE } from "./lib/constants";
 import { Dao } from "./lib/account";
 import { Votes } from "./lib/outcome";
 import { ConfigDaoIntent } from "./lib/intents";
-import { DaoData, DepStatus, IntentStatus, VoteIntentArgs } from "./lib/types";
+import { DaoData, DaoMetadata, DepStatus, IntentStatus, VoteIntentArgs } from "./lib/types";
 import { Participant } from "./lib/user";
+import { Registry } from "./lib/registry";
 
 export class DaoClient extends AccountSDK {
+	registry?: Registry
 	participant?: Participant;
 
 	get dao(): Dao {
@@ -57,6 +59,8 @@ export class DaoClient extends AccountSDK {
 			}
 		);
 
+		(daoClient as DaoClient).registry = await Registry.init(daoClient.client);
+
 		if (daoId) {
 			(daoClient as DaoClient).participant = await Participant.init(
 				daoClient.client, daoId, (daoClient.account as Dao).assetType, userAddr
@@ -69,6 +73,7 @@ export class DaoClient extends AccountSDK {
 	async refresh() {
 		await super.refresh();
 		await this.participant?.refresh();
+		await this.registry?.refresh();
 	}
 
 	async switchDao(daoId: string) {
@@ -278,8 +283,17 @@ export class DaoClient extends AccountSDK {
 		return this.user.accounts;
 	}
 
-	getDaoName(): string {
-		return this.dao.getName();
+	getDaoMetadata(): DaoMetadata {
+		return {
+			name: this.dao.metadata.find(md => md.key === "name")?.value ?? "",
+			description: this.dao.metadata.find(md => md.key === "description")?.value ?? "",
+			image: this.dao.metadata.find(md => md.key === "image")?.value ?? "",
+			twitter: this.dao.metadata.find(md => md.key === "twitter")?.value ?? "",
+			telegram: this.dao.metadata.find(md => md.key === "telegram")?.value ?? "",
+			discord: this.dao.metadata.find(md => md.key === "discord")?.value ?? "",
+			github: this.dao.metadata.find(md => md.key === "github")?.value ?? "",
+			website: this.dao.metadata.find(md => md.key === "website")?.value ?? "",
+		};
 	}
 
 	getDaoDeps(): Dep[] {

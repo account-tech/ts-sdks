@@ -42,6 +42,17 @@ export type DaoData = AccountData & {
     votingQuorum: bigint, 
 }
 
+export type DaoMetadata = {
+    name: string,
+    description: string,
+    image: string,
+    twitter: string,
+    telegram: string,
+    discord: string,
+    github: string,
+    website: string,
+}
+
 // user.ts
 
 export type Vote = {
