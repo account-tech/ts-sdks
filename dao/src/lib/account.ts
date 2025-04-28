@@ -169,11 +169,8 @@ export class Dao extends Account implements DaoData {
     joinDao(
         tx: Transaction,
         user: string | TransactionArgument,
-        account: string | TransactionArgument = this.id,
+        account: string | TransactionArgument,
     ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
         return tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::join`,
             arguments: [
@@ -186,11 +183,8 @@ export class Dao extends Account implements DaoData {
     leaveDao(
         tx: Transaction,
         user: string,
-        account: string = this.id,
+        account: string,
     ): TransactionResult {
-        if (!account) {
-            throw new Error("No account available: this.id is not set and no account was provided");
-        }
         return tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::leave`,
             arguments: [

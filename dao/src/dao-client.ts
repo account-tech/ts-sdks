@@ -192,7 +192,26 @@ export class DaoClient extends AccountSDK {
 	}
 
 	reorderDaos(tx: Transaction, daoAddrs: string[]) {
-		return this.user.reorderAccounts(tx, this.user.id, DAO_CONFIG_TYPE, daoAddrs);
+		this.user.reorderAccounts(tx, this.user.id, DAO_CONFIG_TYPE, daoAddrs);
+	}
+
+	followDao(tx: Transaction, daoId: string, username?: string, profilePicture?: string) {
+		let user;
+		if (this.user.id === "") {
+			user = this.user.createUser(tx, username ?? "", profilePicture ?? "");
+		} else {
+			user = tx.object(this.user.id);
+		}
+
+		this.dao.joinDao(tx, user, daoId);
+
+		if (this.user.id === "") {
+			this.user.transferUser(tx, user, this.user.address!);
+		}
+	}
+
+	unfollowDao(tx: Transaction, daoId: string) {
+		this.dao.leaveDao(tx, this.user.id, daoId);
 	}
 
 	// === Staking ===
@@ -255,12 +274,8 @@ export class DaoClient extends AccountSDK {
 		return this.user.profile;
 	}
 
-	getUserMultisigs(): AccountPreview[] {
+	getUserDaos(): AccountPreview[] {
 		return this.user.accounts;
-	}
-
-	getUserInvites(): Invite[] {
-		return this.user.invites;
 	}
 
 	getDaoName(): string {
