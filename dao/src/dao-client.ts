@@ -1,7 +1,7 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import {
 	Intent, OwnedData, AccountPreview, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	ActionsArgs, Invite, Profile, ActionsIntentTypes, Policy,
+	ActionsArgs, Profile, ActionsIntentTypes, Policy,
 } from "@account.tech/core";
 import {
 	BorrowCapIntent, EmptyIntent,

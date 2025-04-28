@@ -4,3 +4,4 @@ export * from "./intents";
 export * from "./account";
 export * from "./types";
 export * from "./user";
+export * from "./registry";
