@@ -101,15 +101,12 @@ export class DaoClient extends AccountSDK {
 		discord: string,
 		github: string,
 		website: string,
-		// user params
-		newUser?: { username: string, profilePicture: string },
 	): TransactionResult {
 		// create the user if the user doesn't have one
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
 		if (userId === "") {
-			if (!newUser) throw new Error("User must create an user before creating a multisig");
-			createdUser = this.user.createUser(tx, newUser.username, newUser.profilePicture); 
+			createdUser = this.user.createUser(tx); 
 			userId = tx.moveCall({
 				target: `${SUI_FRAMEWORK}::object::id`,
 				typeArguments: [`${ACCOUNT_PROTOCOL.V1}::user::User`],
