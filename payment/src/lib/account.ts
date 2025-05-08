@@ -120,8 +120,8 @@ export class Payment extends Account implements PaymentData {
     sharePaymentAccount(
         tx: Transaction,
         account: TransactionArgument,
-    ): TransactionResult {
-        return tx.moveCall({
+    ) {
+        tx.moveCall({
             package: SUI_FRAMEWORK,
             module: "transfer",
             function: "public_share_object",
@@ -132,35 +132,35 @@ export class Payment extends Account implements PaymentData {
 
     joinPaymentAccount(
         tx: Transaction,
-        user: TransactionPureInput,
+        user: TransactionObjectInput,
         account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return join(tx, { user, account });
+        join(tx, { user, account });
     }
 
     leavePaymentAccount(
         tx: Transaction,
         user: TransactionObjectInput,
         account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return leave(tx, { user, account });
+        leave(tx, { user, account });
     }
 
     sendInvite(
         tx: Transaction,
         recipient: string,
         account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return sendInvite(tx, { account, recipient });
+        sendInvite(tx, { account, recipient });
     }
 
     authenticate(
@@ -183,22 +183,22 @@ export class Payment extends Account implements PaymentData {
         tx: Transaction,
         key: TransactionPureInput,
         account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return approveIntent(tx, { account, key });
+        approveIntent(tx, { account, key });
     }
 
     disapproveIntent(
         tx: Transaction,
         key: string,
         account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return disapproveIntent(tx, { account, key });
+        disapproveIntent(tx, { account, key });
     }
 
     executeIntent(
@@ -218,7 +218,7 @@ export class Payment extends Account implements PaymentData {
         tx: Transaction,
         actionsArgs: ConfigPaymentArgs,
         account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
@@ -255,7 +255,7 @@ export class Payment extends Account implements PaymentData {
 
         const expired = destroyEmptyIntent(tx, PAYMENT_GENERICS, { account, key: "config-payment" });
         configPayment.deleteConfigPayment(tx, expired);
-        return destroyEmptyExpired(tx, expired);
+        destroyEmptyExpired(tx, expired);
     }
 }
 

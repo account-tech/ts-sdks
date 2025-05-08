@@ -1,4 +1,4 @@
-import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { Transaction, TransactionObjectInput } from "@mysten/sui/transactions";
 import * as config from "../.gen/account-payment/config/functions";
 import * as pay from "../.gen/account-payment/pay/functions";
 import * as accountProtocol from "../.gen/account-protocol/account/functions";
@@ -35,7 +35,7 @@ export class ConfigPaymentIntent extends Intent {
         params: TransactionObjectInput,
         outcome: TransactionObjectInput,
         actionArgs: ConfigPaymentArgs,
-    ): TransactionResult {
+    ) {
         let addrs: string[] = [];
         let roles: string[][] = [];
         if (actionArgs.members) {
@@ -45,7 +45,7 @@ export class ConfigPaymentIntent extends Intent {
             });
         }
 
-        return config.requestConfigPayment(
+        config.requestConfigPayment(
             tx,
             {
                 auth,
@@ -62,8 +62,8 @@ export class ConfigPaymentIntent extends Intent {
         tx: Transaction,
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
         executable: TransactionObjectInput,
-    ): TransactionResult {
-        return config.executeConfigPayment(
+    ) {
+        config.executeConfigPayment(
             tx,
             {
                 executable,
@@ -75,14 +75,13 @@ export class ConfigPaymentIntent extends Intent {
     clearEmpty(
         tx: Transaction,
         accountGenerics: [string, string],
-        account: TransactionObjectInput,
         key: string,
-    ): TransactionResult {
+    ) {
         const expired = accountProtocol.destroyEmptyIntent(
             tx,
             accountGenerics,
             {
-                account,
+                account: this.account,
                 key,
             }
         );
@@ -90,7 +89,7 @@ export class ConfigPaymentIntent extends Intent {
             tx,
             expired
         );
-        return intents.destroyEmptyExpired(
+        intents.destroyEmptyExpired(
             tx,
             expired,
         );
@@ -99,14 +98,13 @@ export class ConfigPaymentIntent extends Intent {
     deleteExpired(
         tx: Transaction,
         accountGenerics: [string, string],
-        account: TransactionObjectInput,
         key: string,
-    ): TransactionResult {
+    ) {
         const expired = accountProtocol.deleteExpiredIntent(
             tx,
             accountGenerics,
             {
-                account,
+                account: this.account,
                 key,
                 clock: CLOCK,
             }
@@ -115,7 +113,7 @@ export class ConfigPaymentIntent extends Intent {
             tx,
             expired
         );
-        return intents.destroyEmptyExpired(
+        intents.destroyEmptyExpired(
             tx,
             expired,
         );
@@ -146,8 +144,8 @@ export class PayIntent extends Intent {
         params: TransactionObjectInput,
         outcome: TransactionObjectInput,
         actionArgs: { coinType: string, amount: bigint },
-    ): TransactionResult {
-        return pay.requestPay(
+    ) {
+        pay.requestPay(
             tx,
             actionArgs.coinType,
             {
@@ -165,8 +163,8 @@ export class PayIntent extends Intent {
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
         executable: TransactionObjectInput,
         coin: TransactionObjectInput,
-    ): TransactionResult {
-        return pay.executePay(
+    ) {
+        pay.executePay(
             tx,
             this.args.coinType,
             {
@@ -182,14 +180,13 @@ export class PayIntent extends Intent {
     clearEmpty(
         tx: Transaction,
         accountGenerics: [string, string],
-        account: TransactionObjectInput,
         key: string,
-    ): TransactionResult {
+    ) {
         const expired = accountProtocol.destroyEmptyIntent(
             tx,
             accountGenerics,
             {
-                account,
+                account: this.account,
                 key,
             }
         );
@@ -198,7 +195,7 @@ export class PayIntent extends Intent {
             this.args.coinType,
             expired,
         );
-        return intents.destroyEmptyExpired(
+        intents.destroyEmptyExpired(
             tx,
             expired,
         );
@@ -207,14 +204,13 @@ export class PayIntent extends Intent {
     deleteExpired(
         tx: Transaction,
         accountGenerics: [string, string],
-        account: TransactionObjectInput,
         key: string,
-    ): TransactionResult {
+    ) {
         const expired = accountProtocol.deleteExpiredIntent(
             tx,
             accountGenerics,
             {
-                account,
+                account: this.account,
                 key,
                 clock: CLOCK,
             }
@@ -224,7 +220,7 @@ export class PayIntent extends Intent {
             this.args.coinType,
             expired,
         );
-        return intents.destroyEmptyExpired(
+        intents.destroyEmptyExpired(
             tx,
             expired,
         );

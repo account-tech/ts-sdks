@@ -28,8 +28,8 @@ export class Pending implements Outcome {
         return this.approved_by === addr;
     }
 
-    approve(tx: Transaction): TransactionResult {
-        return approveIntent(tx, { account: this.account, key: this.key });
+    approve(tx: Transaction) {
+        approveIntent(tx, { account: this.account, key: this.key });
     }
 
     maybeApprove(tx: Transaction, caller: string) {
@@ -38,8 +38,8 @@ export class Pending implements Outcome {
         }
     }
 
-    disapprove(tx: Transaction): TransactionResult {
-        return disapproveIntent(tx, { account: this.account, key: this.key });
+    disapprove(tx: Transaction) {
+        disapproveIntent(tx, { account: this.account, key: this.key });
     }
 
     execute(tx: Transaction): TransactionResult {

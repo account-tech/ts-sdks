@@ -1,6 +1,8 @@
 import { coinWithBalance, Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { SuiObjectResponse, SuiMoveObject } from "@mysten/sui/client";
+
 import {
-	Intent, OwnedData, AccountPreview, Dep,
+	Intent, OwnedData, Dep,
 	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile,
 } from "@account.tech/core";
 import { SUI_FRAMEWORK, ACCOUNT_PROTOCOL, TransactionPureInput } from "@account.tech/core/dist/types";
@@ -14,6 +16,8 @@ import { Pending } from "./lib/outcome";
 import { ConfigPaymentIntent, PayIntent } from "./lib/intents";
 
 export class PaymentClient extends AccountSDK {
+	previews: { id: string, name: string }[] = [];
+	
 	get paymentAccount(): Payment {
 		return this.account as Payment;
 	}
@@ -23,7 +27,7 @@ export class PaymentClient extends AccountSDK {
 		userAddr: string,
 		accountId?: string,
 	): Promise<PaymentClient> {
-		const msClient = await super.init(
+		const paymentClient = await super.init(
 			network,
 			userAddr,
 			accountId,
@@ -35,7 +39,50 @@ export class PaymentClient extends AccountSDK {
 				outcomeFactory: [Pending],
 			}
 		);
-		return msClient as PaymentClient;
+
+		(paymentClient as PaymentClient).previews = await (paymentClient as PaymentClient).fetchAccountPreviews();
+
+		return paymentClient as PaymentClient;
+	}
+
+	async fetchAccountPreviews(): Promise<{ id: string, name: string }[]> {
+		const allIds = this.user.accountIds;
+		if (allIds.length === 0) return [];
+
+		// Fetch all account objects in one batch
+		// Process in batches of 50 due to API limitations
+		const accountsObjs = [];
+		for (let i = 0; i < allIds.length; i += 50) {
+			const batch = allIds.slice(i, i + 50);
+			const batchResults = await this.client.multiGetObjects({
+				ids: batch,
+				options: { showContent: true }
+			});
+			accountsObjs.push(...batchResults);
+		}
+
+		// Process each account object
+		const accounts = accountsObjs
+			.filter(acc => (acc.data?.content as SuiMoveObject).type.includes(this.user.accountType))
+			.map((acc: SuiObjectResponse) => {
+				const moveObj = acc.data?.content as SuiMoveObject;
+
+				const name = (moveObj.fields as any).metadata.fields.inner.fields.contents
+					.find((entry: any) => entry.fields.key === "name")?.fields.value;
+
+				return {
+					id: (moveObj.fields as any).id.id,
+					name: name ?? ""
+				};
+			})
+			.sort((a, b) => {
+				// Create a map of id to its position in allIds for sorting
+				const idPositionMap = new Map(allIds.map((id, index) => [id, index]));
+				// Sort based on the original order in allIds
+				return idPositionMap.get(a.id)! - idPositionMap.get(b.id)!;
+			});
+
+		return accounts;
 	}
 
 	async refresh() {
@@ -52,7 +99,7 @@ export class PaymentClient extends AccountSDK {
 		name: string, // name of the payment account
 		newUser?: { username: string, profilePicture: string }, // must provide args if caller has no User object [USE PLACEHOLDER FOR NOW]
 		memberAddresses?: string[], // backup addresses if any
-	): TransactionResult {
+	) {
 		// create the user if the user doesn't have one
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
@@ -89,7 +136,7 @@ export class PaymentClient extends AccountSDK {
 		// transfer the user if just created
 		if (createdUser) this.user.transferUser(tx, createdUser, this.user.address!);
 		// share the account
-		return this.paymentAccount?.sharePaymentAccount(tx, account);
+		this.paymentAccount?.sharePaymentAccount(tx, account);
 	}
 
 	/// Factory function to call the appropriate request function
@@ -98,7 +145,7 @@ export class PaymentClient extends AccountSDK {
 		intentType: string, // TypeName of the intent
 		intentArgs: IntentArgs,
 		actionsArgs: ActionsArgs,
-	): TransactionResult {
+	) {
 		const auth = this.paymentAccount.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.paymentAccount.emptyApprovalsOutcome(tx);
@@ -108,43 +155,41 @@ export class PaymentClient extends AccountSDK {
 		const method = intentClass.prototype.request;
 		method.call(intentClass, tx, PAYMENT_GENERICS, auth, this.paymentAccount.id, params, outcome, actionsArgs);
 		// directly approve after proposing
-		return this.paymentAccount.approveIntent(tx, intentArgs.key, this.paymentAccount.id);
+		this.paymentAccount.approveIntent(tx, intentArgs.key, this.paymentAccount.id);
 	}
 
 	/// Approves a intent
 	approve(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult {
-		return this.paymentAccount.approveIntent(tx, intentKey, this.paymentAccount.id);
+	) {
+		this.paymentAccount.approveIntent(tx, intentKey, this.paymentAccount.id);
 	}
 
 	/// Removes approval from a intent
 	disapprove(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult {
-		return this.paymentAccount.disapproveIntent(tx, intentKey, this.paymentAccount.id);
+	) {
+		this.paymentAccount.disapproveIntent(tx, intentKey, this.paymentAccount.id);
 	}
 
 	/// Calls the execute function for the intent, approve if not already done
 	execute(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult {
+	) {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
 
 		const executable = this.paymentAccount.executeIntent(tx, intentKey);
 
-		let result;
-		result = intent.execute(tx, PAYMENT_GENERICS, executable);
+		intent.execute(tx, PAYMENT_GENERICS, executable);
 		intent.completeExecution(tx, PAYMENT_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, PAYMENT_GENERICS, this.paymentAccount.id, intentKey);
+			intent.clearEmpty(tx, PAYMENT_GENERICS, intentKey);
 		}
-		return result;
 	}
 
 	/// Deletes a intent if it has expired
@@ -156,19 +201,19 @@ export class PaymentClient extends AccountSDK {
 		if (!intent) throw new Error("Intent not found");
 		if (!intent.hasExpired()) throw new Error("Intent has not expired");
 
-		intent.deleteExpired(tx, PAYMENT_GENERICS, this.paymentAccount.id, intentKey);
+		intent.deleteExpired(tx, PAYMENT_GENERICS, intentKey);
 	}
 
-	acceptInvite(tx: Transaction, invite: TransactionObjectInput): TransactionResult {
+	acceptInvite(tx: Transaction, invite: TransactionObjectInput) {
 		let user: TransactionObjectInput = this.user.id;
 		if (user === "") {
 			user = this.user.createUser(tx);
 		}
-		return this.user.acceptInvite(tx, user, invite);
+		this.user.acceptInvite(tx, user, invite);
 	}
 
-	refuseInvite(tx: Transaction, invite: TransactionObjectInput): TransactionResult {
-		return this.user.refuseInvite(tx, invite);
+	refuseInvite(tx: Transaction, invite: TransactionObjectInput) {
+		this.user.refuseInvite(tx, invite);
 	}
 
 	// === Getters ===
@@ -182,8 +227,8 @@ export class PaymentClient extends AccountSDK {
 		return this.user.profile;
 	}
 
-	getUserPaymentAccounts(): AccountPreview[] {
-		return this.user.accounts;
+	getUserPaymentAccounts(): { id: string, name: string }[] {
+		return this.previews;
 	}
 
 	getUserInvites(): Invite[] {
@@ -305,17 +350,17 @@ export class PaymentClient extends AccountSDK {
 	modifyName(
 		tx: Transaction,
 		newName: string,
-	): TransactionResult {
+	) {
 		const auth = this.paymentAccount.authenticate(tx);
-		return commands.replaceMetadata(tx, PAYMENT_CONFIG_TYPE, auth, this.paymentAccount.id, ["name"], [newName]);
+		commands.replaceMetadata(tx, PAYMENT_CONFIG_TYPE, auth, this.paymentAccount.id, ["name"], [newName]);
 	}
 
 	/// Updates the verified deps to the latest version
 	updateVerifiedDeps(
 		tx: Transaction,
-	): TransactionResult {
+	) {
 		const auth = this.paymentAccount.authenticate(tx);
-		return commands.updateVerifiedDepsToLatest(tx, PAYMENT_CONFIG_TYPE, auth, this.paymentAccount.id);
+		commands.updateVerifiedDepsToLatest(tx, PAYMENT_CONFIG_TYPE, auth, this.paymentAccount.id);
 	}
 
 	// === Intents ===
@@ -324,8 +369,8 @@ export class PaymentClient extends AccountSDK {
 	setRecoveryAddress(
 		tx: Transaction,
 		backupAddress: string,
-	): TransactionResult {
-		return this.paymentAccount.atomicConfigPaymentAccount(
+	) {
+		this.paymentAccount.atomicConfigPaymentAccount(
 			tx,
 			{
 				members: [
@@ -341,8 +386,8 @@ export class PaymentClient extends AccountSDK {
 	setOwnerAddress(
 		tx: Transaction,
 		ownerAddress: string,
-	): TransactionResult {
-		return this.paymentAccount.atomicConfigPaymentAccount(
+	) {
+		this.paymentAccount.atomicConfigPaymentAccount(
 			tx,
 			{
 				members: [
@@ -359,7 +404,7 @@ export class PaymentClient extends AccountSDK {
 		description: string,
 		coinType: string,
 		amount: bigint,
-	): TransactionResult {
+	) {
 		const auth = this.paymentAccount.authenticate(tx);
 		const [params, key] = Intent.createParamsWithRandKey( // key is payment id
 			tx,
@@ -377,14 +422,14 @@ export class PaymentClient extends AccountSDK {
 			{ coinType, amount },
 		);
 
-		return this.paymentAccount.approveIntent(tx, key, this.paymentAccount.id);
+		this.paymentAccount.approveIntent(tx, key, this.paymentAccount.id);
 	}
 
 	makePayment(
 		tx: Transaction,
 		paymentId: string,
 		tipAmount?: bigint,
-	): TransactionResult {
+	) {
 		const intent = this.getIntent(paymentId) as PayIntent;
 		if (!intent) throw new Error("Intent not found");
 
@@ -398,7 +443,7 @@ export class PaymentClient extends AccountSDK {
 		);
 
 		intent.completeExecution(tx, PAYMENT_GENERICS, executable);
-		return intent.clearEmpty(tx, PAYMENT_GENERICS, this.paymentAccount.id, paymentId);
+		intent.clearEmpty(tx, PAYMENT_GENERICS, paymentId);
 	}
 }
 

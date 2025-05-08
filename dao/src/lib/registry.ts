@@ -46,7 +46,7 @@ export class Registry {
                 discord: metadata.find((m: any) => m.fields.key === "discord")?.fields.value,
                 github: metadata.find((m: any) => m.fields.key === "github")?.fields.value,
                 website: metadata.find((m: any) => m.fields.key === "website")?.fields.value,
-            }
+            } as DaoMetadata;
         });
     }
 

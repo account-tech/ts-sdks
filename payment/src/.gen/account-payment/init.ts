@@ -5,14 +5,14 @@ import * as payment from "./payment/structs";
 import * as version from "./version/structs";
 import {StructClassLoader} from "../_framework/loader";
 
-export function registerClasses(loader: StructClassLoader) { loader.register(config.ConfigPaymentAction);
-loader.register(config.ConfigPaymentIntent);
-loader.register(fees.AdminCap);
+export function registerClasses(loader: StructClassLoader) { loader.register(config.ConfigPaymentIntent);
+loader.register(config.ConfigPaymentAction);
 loader.register(fees.Fees);
+loader.register(fees.AdminCap);
 loader.register(pay.IssueEvent);
-loader.register(pay.PayAction);
 loader.register(pay.PayEvent);
 loader.register(pay.PayIntent);
+loader.register(pay.PayAction);
 loader.register(payment.ConfigWitness);
 loader.register(payment.Payment);
 loader.register(payment.Pending);

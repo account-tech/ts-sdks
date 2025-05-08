@@ -2,7 +2,7 @@
   "name": "@account.tech/payment",
   "author": "Thouny <thouny@tuta.io>",
   "description": "Payment Account SDK powered by account.tech",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "Apache-2.0",
   "files": [
     "dist"
@@ -18,16 +18,16 @@
     "build:types": "tsc --build"
   },
   "dependencies": {
-    "@account.tech/core": "^0.1.8",
-    "@mysten/sui": "^1.26.1",
-    "bun-types": "^1.0.25"
+    "@account.tech/core": "^0.1.18",
+    "@mysten/sui": "^1.29.1",
+    "bun-types": "^1.2.12"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/chai": "^4.3.16",
-    "@types/node": "^20.12.12",
-    "chai": "^5.1.1",
-    "tsup": "^8.3.0",
-    "typescript": "^5.3.3"
+    "@types/chai": "^4.3.20",
+    "@types/node": "^20.17.45",
+    "chai": "^5.2.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
   }
 }

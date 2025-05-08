@@ -1,6 +1,6 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import {
-	Intent, OwnedData, AccountPreview, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
+	Intent, OwnedData, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
 	ActionsArgs, Profile, ActionsIntentTypes, Policy,
 } from "@account.tech/core";
 import {
@@ -27,6 +27,7 @@ import { Registry } from "./lib/registry";
 export class DaoClient extends AccountSDK {
 	registry?: Registry
 	participant?: Participant;
+	previews: DaoMetadata[] = [];
 
 	get dao(): Dao {
 		return this.account as Dao;
@@ -60,6 +61,7 @@ export class DaoClient extends AccountSDK {
 		);
 
 		(daoClient as DaoClient).registry = await Registry.init(daoClient.client);
+		(daoClient as DaoClient).previews = await (daoClient as DaoClient).fetchDaoPreviews();
 
 		if (daoId) {
 			(daoClient as DaoClient).participant = await Participant.init(
@@ -70,10 +72,18 @@ export class DaoClient extends AccountSDK {
 		return daoClient as DaoClient;
 	}
 
+	async fetchDaoPreviews(): Promise<DaoMetadata[]> {
+		const allIds = this.user.accountIds;
+		if (allIds.length === 0) return [];
+
+		return this.registry?.daos.filter(dao => allIds.includes(dao.id)) ?? [];
+	}
+
 	async refresh() {
 		await super.refresh();
 		await this.participant?.refresh();
 		await this.registry?.refresh();
+		this.previews = await this.fetchDaoPreviews();
 	}
 
 	async switchDao(daoId: string) {
@@ -276,12 +286,13 @@ export class DaoClient extends AccountSDK {
 		return this.user.profile;
 	}
 
-	getUserDaos(): AccountPreview[] {
-		return this.user.accounts;
+	getUserDaos(): DaoMetadata[] {
+		return this.previews;
 	}
 
 	getDaoMetadata(): DaoMetadata {
 		return {
+			id: this.dao.id,
 			name: this.dao.metadata.find(md => md.key === "name")?.value ?? "",
 			description: this.dao.metadata.find(md => md.key === "description")?.value ?? "",
 			image: this.dao.metadata.find(md => md.key === "image")?.value ?? "",

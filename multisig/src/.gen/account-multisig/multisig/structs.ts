@@ -9,74 +9,6 @@ import {bcs} from "@mysten/sui/bcs";
 import {SuiClient, SuiObjectData, SuiParsedData} from "@mysten/sui/client";
 import {fromB64, fromHEX, toHEX} from "@mysten/sui/utils";
 
-/* ============================== Approvals =============================== */
-
-export function isApprovals(type: string): boolean { type = compressSuiType(type); return type === `${PKG_V1}::multisig::Approvals`; }
-
-export interface ApprovalsFields { totalWeight: ToField<"u64">; roleWeight: ToField<"u64">; approved: ToField<VecSet<"address">> }
-
-export type ApprovalsReified = Reified< Approvals, ApprovalsFields >;
-
-export class Approvals implements StructClass { __StructClass = true as const;
-
- static readonly $typeName = `${PKG_V1}::multisig::Approvals`; static readonly $numTypeParams = 0; static readonly $isPhantom = [] as const;
-
- readonly $typeName = Approvals.$typeName; readonly $fullTypeName: `${typeof PKG_V1}::multisig::Approvals`; readonly $typeArgs: []; readonly $isPhantom = Approvals.$isPhantom;
-
- readonly totalWeight: ToField<"u64">; readonly roleWeight: ToField<"u64">; readonly approved: ToField<VecSet<"address">>
-
- private constructor(typeArgs: [], fields: ApprovalsFields, ) { this.$fullTypeName = composeSuiType( Approvals.$typeName, ...typeArgs ) as `${typeof PKG_V1}::multisig::Approvals`; this.$typeArgs = typeArgs;
-
- this.totalWeight = fields.totalWeight;; this.roleWeight = fields.roleWeight;; this.approved = fields.approved; }
-
- static reified( ): ApprovalsReified { return { typeName: Approvals.$typeName, fullTypeName: composeSuiType( Approvals.$typeName, ...[] ) as `${typeof PKG_V1}::multisig::Approvals`, typeArgs: [ ] as [], isPhantom: Approvals.$isPhantom, reifiedTypeArgs: [], fromFields: (fields: Record<string, any>) => Approvals.fromFields( fields, ), fromFieldsWithTypes: (item: FieldsWithTypes) => Approvals.fromFieldsWithTypes( item, ), fromBcs: (data: Uint8Array) => Approvals.fromBcs( data, ), bcs: Approvals.bcs, fromJSONField: (field: any) => Approvals.fromJSONField( field, ), fromJSON: (json: Record<string, any>) => Approvals.fromJSON( json, ), fromSuiParsedData: (content: SuiParsedData) => Approvals.fromSuiParsedData( content, ), fromSuiObjectData: (content: SuiObjectData) => Approvals.fromSuiObjectData( content, ), fetch: async (client: SuiClient, id: string) => Approvals.fetch( client, id, ), new: ( fields: ApprovalsFields, ) => { return new Approvals( [], fields ) }, kind: "StructClassReified", } }
-
- static get r() { return Approvals.reified() }
-
- static phantom( ): PhantomReified<ToTypeStr<Approvals>> { return phantom(Approvals.reified( )); } static get p() { return Approvals.phantom() }
-
- static get bcs() { return bcs.struct("Approvals", {
-
- total_weight: bcs.u64(), role_weight: bcs.u64(), approved: VecSet.bcs(bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), }))
-
-}) };
-
- static fromFields( fields: Record<string, any> ): Approvals { return Approvals.reified( ).new( { totalWeight: decodeFromFields("u64", fields.total_weight), roleWeight: decodeFromFields("u64", fields.role_weight), approved: decodeFromFields(VecSet.reified("address"), fields.approved) } ) }
-
- static fromFieldsWithTypes( item: FieldsWithTypes ): Approvals { if (!isApprovals(item.type)) { throw new Error("not a Approvals type");
-
- }
-
- return Approvals.reified( ).new( { totalWeight: decodeFromFieldsWithTypes("u64", item.fields.total_weight), roleWeight: decodeFromFieldsWithTypes("u64", item.fields.role_weight), approved: decodeFromFieldsWithTypes(VecSet.reified("address"), item.fields.approved) } ) }
-
- static fromBcs( data: Uint8Array ): Approvals { return Approvals.fromFields( Approvals.bcs.parse(data) ) }
-
- toJSONField() { return {
-
- totalWeight: this.totalWeight.toString(),roleWeight: this.roleWeight.toString(),approved: this.approved.toJSONField(),
-
-} }
-
- toJSON() { return { $typeName: this.$typeName, $typeArgs: this.$typeArgs, ...this.toJSONField() } }
-
- static fromJSONField( field: any ): Approvals { return Approvals.reified( ).new( { totalWeight: decodeFromJSONField("u64", field.totalWeight), roleWeight: decodeFromJSONField("u64", field.roleWeight), approved: decodeFromJSONField(VecSet.reified("address"), field.approved) } ) }
-
- static fromJSON( json: Record<string, any> ): Approvals { if (json.$typeName !== Approvals.$typeName) { throw new Error("not a WithTwoGenerics json object") };
-
- return Approvals.fromJSONField( json, ) }
-
- static fromSuiParsedData( content: SuiParsedData ): Approvals { if (content.dataType !== "moveObject") { throw new Error("not an object"); } if (!isApprovals(content.type)) { throw new Error(`object at ${(content.fields as any).id} is not a Approvals object`); } return Approvals.fromFieldsWithTypes( content ); }
-
- static fromSuiObjectData( data: SuiObjectData ): Approvals { if (data.bcs) { if (data.bcs.dataType !== "moveObject" || !isApprovals(data.bcs.type)) { throw new Error(`object at is not a Approvals object`); }
-
- return Approvals.fromBcs( fromB64(data.bcs.bcsBytes) ); } if (data.content) { return Approvals.fromSuiParsedData( data.content ) } throw new Error( "Both `bcs` and `content` fields are missing from the data. Include `showBcs` or `showContent` in the request." ); }
-
- static async fetch( client: SuiClient, id: string ): Promise<Approvals> { const res = await client.getObject({ id, options: { showBcs: true, }, }); if (res.error) { throw new Error(`error fetching Approvals object at id ${id}: ${res.error.code}`); } if (res.data?.bcs?.dataType !== "moveObject" || !isApprovals(res.data.bcs.type)) { throw new Error(`object at id ${id} is not a Approvals object`); }
-
- return Approvals.fromSuiObjectData( res.data ); }
-
- }
-
 /* ============================== ConfigWitness =============================== */
 
 export function isConfigWitness(type: string): boolean { type = compressSuiType(type); return type === `${PKG_V1}::multisig::ConfigWitness`; }
@@ -142,74 +74,6 @@ export class ConfigWitness implements StructClass { __StructClass = true as cons
  static async fetch( client: SuiClient, id: string ): Promise<ConfigWitness> { const res = await client.getObject({ id, options: { showBcs: true, }, }); if (res.error) { throw new Error(`error fetching ConfigWitness object at id ${id}: ${res.error.code}`); } if (res.data?.bcs?.dataType !== "moveObject" || !isConfigWitness(res.data.bcs.type)) { throw new Error(`object at id ${id} is not a ConfigWitness object`); }
 
  return ConfigWitness.fromSuiObjectData( res.data ); }
-
- }
-
-/* ============================== Member =============================== */
-
-export function isMember(type: string): boolean { type = compressSuiType(type); return type === `${PKG_V1}::multisig::Member`; }
-
-export interface MemberFields { addr: ToField<"address">; weight: ToField<"u64">; roles: ToField<VecSet<String>> }
-
-export type MemberReified = Reified< Member, MemberFields >;
-
-export class Member implements StructClass { __StructClass = true as const;
-
- static readonly $typeName = `${PKG_V1}::multisig::Member`; static readonly $numTypeParams = 0; static readonly $isPhantom = [] as const;
-
- readonly $typeName = Member.$typeName; readonly $fullTypeName: `${typeof PKG_V1}::multisig::Member`; readonly $typeArgs: []; readonly $isPhantom = Member.$isPhantom;
-
- readonly addr: ToField<"address">; readonly weight: ToField<"u64">; readonly roles: ToField<VecSet<String>>
-
- private constructor(typeArgs: [], fields: MemberFields, ) { this.$fullTypeName = composeSuiType( Member.$typeName, ...typeArgs ) as `${typeof PKG_V1}::multisig::Member`; this.$typeArgs = typeArgs;
-
- this.addr = fields.addr;; this.weight = fields.weight;; this.roles = fields.roles; }
-
- static reified( ): MemberReified { return { typeName: Member.$typeName, fullTypeName: composeSuiType( Member.$typeName, ...[] ) as `${typeof PKG_V1}::multisig::Member`, typeArgs: [ ] as [], isPhantom: Member.$isPhantom, reifiedTypeArgs: [], fromFields: (fields: Record<string, any>) => Member.fromFields( fields, ), fromFieldsWithTypes: (item: FieldsWithTypes) => Member.fromFieldsWithTypes( item, ), fromBcs: (data: Uint8Array) => Member.fromBcs( data, ), bcs: Member.bcs, fromJSONField: (field: any) => Member.fromJSONField( field, ), fromJSON: (json: Record<string, any>) => Member.fromJSON( json, ), fromSuiParsedData: (content: SuiParsedData) => Member.fromSuiParsedData( content, ), fromSuiObjectData: (content: SuiObjectData) => Member.fromSuiObjectData( content, ), fetch: async (client: SuiClient, id: string) => Member.fetch( client, id, ), new: ( fields: MemberFields, ) => { return new Member( [], fields ) }, kind: "StructClassReified", } }
-
- static get r() { return Member.reified() }
-
- static phantom( ): PhantomReified<ToTypeStr<Member>> { return phantom(Member.reified( )); } static get p() { return Member.phantom() }
-
- static get bcs() { return bcs.struct("Member", {
-
- addr: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), }), weight: bcs.u64(), roles: VecSet.bcs(String.bcs)
-
-}) };
-
- static fromFields( fields: Record<string, any> ): Member { return Member.reified( ).new( { addr: decodeFromFields("address", fields.addr), weight: decodeFromFields("u64", fields.weight), roles: decodeFromFields(VecSet.reified(String.reified()), fields.roles) } ) }
-
- static fromFieldsWithTypes( item: FieldsWithTypes ): Member { if (!isMember(item.type)) { throw new Error("not a Member type");
-
- }
-
- return Member.reified( ).new( { addr: decodeFromFieldsWithTypes("address", item.fields.addr), weight: decodeFromFieldsWithTypes("u64", item.fields.weight), roles: decodeFromFieldsWithTypes(VecSet.reified(String.reified()), item.fields.roles) } ) }
-
- static fromBcs( data: Uint8Array ): Member { return Member.fromFields( Member.bcs.parse(data) ) }
-
- toJSONField() { return {
-
- addr: this.addr,weight: this.weight.toString(),roles: this.roles.toJSONField(),
-
-} }
-
- toJSON() { return { $typeName: this.$typeName, $typeArgs: this.$typeArgs, ...this.toJSONField() } }
-
- static fromJSONField( field: any ): Member { return Member.reified( ).new( { addr: decodeFromJSONField("address", field.addr), weight: decodeFromJSONField("u64", field.weight), roles: decodeFromJSONField(VecSet.reified(String.reified()), field.roles) } ) }
-
- static fromJSON( json: Record<string, any> ): Member { if (json.$typeName !== Member.$typeName) { throw new Error("not a WithTwoGenerics json object") };
-
- return Member.fromJSONField( json, ) }
-
- static fromSuiParsedData( content: SuiParsedData ): Member { if (content.dataType !== "moveObject") { throw new Error("not an object"); } if (!isMember(content.type)) { throw new Error(`object at ${(content.fields as any).id} is not a Member object`); } return Member.fromFieldsWithTypes( content ); }
-
- static fromSuiObjectData( data: SuiObjectData ): Member { if (data.bcs) { if (data.bcs.dataType !== "moveObject" || !isMember(data.bcs.type)) { throw new Error(`object at is not a Member object`); }
-
- return Member.fromBcs( fromB64(data.bcs.bcsBytes) ); } if (data.content) { return Member.fromSuiParsedData( data.content ) } throw new Error( "Both `bcs` and `content` fields are missing from the data. Include `showBcs` or `showContent` in the request." ); }
-
- static async fetch( client: SuiClient, id: string ): Promise<Member> { const res = await client.getObject({ id, options: { showBcs: true, }, }); if (res.error) { throw new Error(`error fetching Member object at id ${id}: ${res.error.code}`); } if (res.data?.bcs?.dataType !== "moveObject" || !isMember(res.data.bcs.type)) { throw new Error(`object at id ${id} is not a Member object`); }
-
- return Member.fromSuiObjectData( res.data ); }
 
  }
 
@@ -281,6 +145,74 @@ export class Multisig implements StructClass { __StructClass = true as const;
 
  }
 
+/* ============================== Member =============================== */
+
+export function isMember(type: string): boolean { type = compressSuiType(type); return type === `${PKG_V1}::multisig::Member`; }
+
+export interface MemberFields { addr: ToField<"address">; weight: ToField<"u64">; roles: ToField<VecSet<String>> }
+
+export type MemberReified = Reified< Member, MemberFields >;
+
+export class Member implements StructClass { __StructClass = true as const;
+
+ static readonly $typeName = `${PKG_V1}::multisig::Member`; static readonly $numTypeParams = 0; static readonly $isPhantom = [] as const;
+
+ readonly $typeName = Member.$typeName; readonly $fullTypeName: `${typeof PKG_V1}::multisig::Member`; readonly $typeArgs: []; readonly $isPhantom = Member.$isPhantom;
+
+ readonly addr: ToField<"address">; readonly weight: ToField<"u64">; readonly roles: ToField<VecSet<String>>
+
+ private constructor(typeArgs: [], fields: MemberFields, ) { this.$fullTypeName = composeSuiType( Member.$typeName, ...typeArgs ) as `${typeof PKG_V1}::multisig::Member`; this.$typeArgs = typeArgs;
+
+ this.addr = fields.addr;; this.weight = fields.weight;; this.roles = fields.roles; }
+
+ static reified( ): MemberReified { return { typeName: Member.$typeName, fullTypeName: composeSuiType( Member.$typeName, ...[] ) as `${typeof PKG_V1}::multisig::Member`, typeArgs: [ ] as [], isPhantom: Member.$isPhantom, reifiedTypeArgs: [], fromFields: (fields: Record<string, any>) => Member.fromFields( fields, ), fromFieldsWithTypes: (item: FieldsWithTypes) => Member.fromFieldsWithTypes( item, ), fromBcs: (data: Uint8Array) => Member.fromBcs( data, ), bcs: Member.bcs, fromJSONField: (field: any) => Member.fromJSONField( field, ), fromJSON: (json: Record<string, any>) => Member.fromJSON( json, ), fromSuiParsedData: (content: SuiParsedData) => Member.fromSuiParsedData( content, ), fromSuiObjectData: (content: SuiObjectData) => Member.fromSuiObjectData( content, ), fetch: async (client: SuiClient, id: string) => Member.fetch( client, id, ), new: ( fields: MemberFields, ) => { return new Member( [], fields ) }, kind: "StructClassReified", } }
+
+ static get r() { return Member.reified() }
+
+ static phantom( ): PhantomReified<ToTypeStr<Member>> { return phantom(Member.reified( )); } static get p() { return Member.phantom() }
+
+ static get bcs() { return bcs.struct("Member", {
+
+ addr: bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), }), weight: bcs.u64(), roles: VecSet.bcs(String.bcs)
+
+}) };
+
+ static fromFields( fields: Record<string, any> ): Member { return Member.reified( ).new( { addr: decodeFromFields("address", fields.addr), weight: decodeFromFields("u64", fields.weight), roles: decodeFromFields(VecSet.reified(String.reified()), fields.roles) } ) }
+
+ static fromFieldsWithTypes( item: FieldsWithTypes ): Member { if (!isMember(item.type)) { throw new Error("not a Member type");
+
+ }
+
+ return Member.reified( ).new( { addr: decodeFromFieldsWithTypes("address", item.fields.addr), weight: decodeFromFieldsWithTypes("u64", item.fields.weight), roles: decodeFromFieldsWithTypes(VecSet.reified(String.reified()), item.fields.roles) } ) }
+
+ static fromBcs( data: Uint8Array ): Member { return Member.fromFields( Member.bcs.parse(data) ) }
+
+ toJSONField() { return {
+
+ addr: this.addr,weight: this.weight.toString(),roles: this.roles.toJSONField(),
+
+} }
+
+ toJSON() { return { $typeName: this.$typeName, $typeArgs: this.$typeArgs, ...this.toJSONField() } }
+
+ static fromJSONField( field: any ): Member { return Member.reified( ).new( { addr: decodeFromJSONField("address", field.addr), weight: decodeFromJSONField("u64", field.weight), roles: decodeFromJSONField(VecSet.reified(String.reified()), field.roles) } ) }
+
+ static fromJSON( json: Record<string, any> ): Member { if (json.$typeName !== Member.$typeName) { throw new Error("not a WithTwoGenerics json object") };
+
+ return Member.fromJSONField( json, ) }
+
+ static fromSuiParsedData( content: SuiParsedData ): Member { if (content.dataType !== "moveObject") { throw new Error("not an object"); } if (!isMember(content.type)) { throw new Error(`object at ${(content.fields as any).id} is not a Member object`); } return Member.fromFieldsWithTypes( content ); }
+
+ static fromSuiObjectData( data: SuiObjectData ): Member { if (data.bcs) { if (data.bcs.dataType !== "moveObject" || !isMember(data.bcs.type)) { throw new Error(`object at is not a Member object`); }
+
+ return Member.fromBcs( fromB64(data.bcs.bcsBytes) ); } if (data.content) { return Member.fromSuiParsedData( data.content ) } throw new Error( "Both `bcs` and `content` fields are missing from the data. Include `showBcs` or `showContent` in the request." ); }
+
+ static async fetch( client: SuiClient, id: string ): Promise<Member> { const res = await client.getObject({ id, options: { showBcs: true, }, }); if (res.error) { throw new Error(`error fetching Member object at id ${id}: ${res.error.code}`); } if (res.data?.bcs?.dataType !== "moveObject" || !isMember(res.data.bcs.type)) { throw new Error(`object at id ${id} is not a Member object`); }
+
+ return Member.fromSuiObjectData( res.data ); }
+
+ }
+
 /* ============================== Role =============================== */
 
 export function isRole(type: string): boolean { type = compressSuiType(type); return type === `${PKG_V1}::multisig::Role`; }
@@ -346,5 +278,73 @@ export class Role implements StructClass { __StructClass = true as const;
  static async fetch( client: SuiClient, id: string ): Promise<Role> { const res = await client.getObject({ id, options: { showBcs: true, }, }); if (res.error) { throw new Error(`error fetching Role object at id ${id}: ${res.error.code}`); } if (res.data?.bcs?.dataType !== "moveObject" || !isRole(res.data.bcs.type)) { throw new Error(`object at id ${id} is not a Role object`); }
 
  return Role.fromSuiObjectData( res.data ); }
+
+ }
+
+/* ============================== Approvals =============================== */
+
+export function isApprovals(type: string): boolean { type = compressSuiType(type); return type === `${PKG_V1}::multisig::Approvals`; }
+
+export interface ApprovalsFields { totalWeight: ToField<"u64">; roleWeight: ToField<"u64">; approved: ToField<VecSet<"address">> }
+
+export type ApprovalsReified = Reified< Approvals, ApprovalsFields >;
+
+export class Approvals implements StructClass { __StructClass = true as const;
+
+ static readonly $typeName = `${PKG_V1}::multisig::Approvals`; static readonly $numTypeParams = 0; static readonly $isPhantom = [] as const;
+
+ readonly $typeName = Approvals.$typeName; readonly $fullTypeName: `${typeof PKG_V1}::multisig::Approvals`; readonly $typeArgs: []; readonly $isPhantom = Approvals.$isPhantom;
+
+ readonly totalWeight: ToField<"u64">; readonly roleWeight: ToField<"u64">; readonly approved: ToField<VecSet<"address">>
+
+ private constructor(typeArgs: [], fields: ApprovalsFields, ) { this.$fullTypeName = composeSuiType( Approvals.$typeName, ...typeArgs ) as `${typeof PKG_V1}::multisig::Approvals`; this.$typeArgs = typeArgs;
+
+ this.totalWeight = fields.totalWeight;; this.roleWeight = fields.roleWeight;; this.approved = fields.approved; }
+
+ static reified( ): ApprovalsReified { return { typeName: Approvals.$typeName, fullTypeName: composeSuiType( Approvals.$typeName, ...[] ) as `${typeof PKG_V1}::multisig::Approvals`, typeArgs: [ ] as [], isPhantom: Approvals.$isPhantom, reifiedTypeArgs: [], fromFields: (fields: Record<string, any>) => Approvals.fromFields( fields, ), fromFieldsWithTypes: (item: FieldsWithTypes) => Approvals.fromFieldsWithTypes( item, ), fromBcs: (data: Uint8Array) => Approvals.fromBcs( data, ), bcs: Approvals.bcs, fromJSONField: (field: any) => Approvals.fromJSONField( field, ), fromJSON: (json: Record<string, any>) => Approvals.fromJSON( json, ), fromSuiParsedData: (content: SuiParsedData) => Approvals.fromSuiParsedData( content, ), fromSuiObjectData: (content: SuiObjectData) => Approvals.fromSuiObjectData( content, ), fetch: async (client: SuiClient, id: string) => Approvals.fetch( client, id, ), new: ( fields: ApprovalsFields, ) => { return new Approvals( [], fields ) }, kind: "StructClassReified", } }
+
+ static get r() { return Approvals.reified() }
+
+ static phantom( ): PhantomReified<ToTypeStr<Approvals>> { return phantom(Approvals.reified( )); } static get p() { return Approvals.phantom() }
+
+ static get bcs() { return bcs.struct("Approvals", {
+
+ total_weight: bcs.u64(), role_weight: bcs.u64(), approved: VecSet.bcs(bcs.bytes(32).transform({ input: (val: string) => fromHEX(val), output: (val: Uint8Array) => toHEX(val), }))
+
+}) };
+
+ static fromFields( fields: Record<string, any> ): Approvals { return Approvals.reified( ).new( { totalWeight: decodeFromFields("u64", fields.total_weight), roleWeight: decodeFromFields("u64", fields.role_weight), approved: decodeFromFields(VecSet.reified("address"), fields.approved) } ) }
+
+ static fromFieldsWithTypes( item: FieldsWithTypes ): Approvals { if (!isApprovals(item.type)) { throw new Error("not a Approvals type");
+
+ }
+
+ return Approvals.reified( ).new( { totalWeight: decodeFromFieldsWithTypes("u64", item.fields.total_weight), roleWeight: decodeFromFieldsWithTypes("u64", item.fields.role_weight), approved: decodeFromFieldsWithTypes(VecSet.reified("address"), item.fields.approved) } ) }
+
+ static fromBcs( data: Uint8Array ): Approvals { return Approvals.fromFields( Approvals.bcs.parse(data) ) }
+
+ toJSONField() { return {
+
+ totalWeight: this.totalWeight.toString(),roleWeight: this.roleWeight.toString(),approved: this.approved.toJSONField(),
+
+} }
+
+ toJSON() { return { $typeName: this.$typeName, $typeArgs: this.$typeArgs, ...this.toJSONField() } }
+
+ static fromJSONField( field: any ): Approvals { return Approvals.reified( ).new( { totalWeight: decodeFromJSONField("u64", field.totalWeight), roleWeight: decodeFromJSONField("u64", field.roleWeight), approved: decodeFromJSONField(VecSet.reified("address"), field.approved) } ) }
+
+ static fromJSON( json: Record<string, any> ): Approvals { if (json.$typeName !== Approvals.$typeName) { throw new Error("not a WithTwoGenerics json object") };
+
+ return Approvals.fromJSONField( json, ) }
+
+ static fromSuiParsedData( content: SuiParsedData ): Approvals { if (content.dataType !== "moveObject") { throw new Error("not an object"); } if (!isApprovals(content.type)) { throw new Error(`object at ${(content.fields as any).id} is not a Approvals object`); } return Approvals.fromFieldsWithTypes( content ); }
+
+ static fromSuiObjectData( data: SuiObjectData ): Approvals { if (data.bcs) { if (data.bcs.dataType !== "moveObject" || !isApprovals(data.bcs.type)) { throw new Error(`object at is not a Approvals object`); }
+
+ return Approvals.fromBcs( fromB64(data.bcs.bcsBytes) ); } if (data.content) { return Approvals.fromSuiParsedData( data.content ) } throw new Error( "Both `bcs` and `content` fields are missing from the data. Include `showBcs` or `showContent` in the request." ); }
+
+ static async fetch( client: SuiClient, id: string ): Promise<Approvals> { const res = await client.getObject({ id, options: { showBcs: true, }, }); if (res.error) { throw new Error(`error fetching Approvals object at id ${id}: ${res.error.code}`); } if (res.data?.bcs?.dataType !== "moveObject" || !isApprovals(res.data.bcs.type)) { throw new Error(`object at id ${id} is not a Approvals object`); }
+
+ return Approvals.fromSuiObjectData( res.data ); }
 
  }

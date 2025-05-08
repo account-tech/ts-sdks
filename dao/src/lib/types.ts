@@ -43,6 +43,7 @@ export type DaoData = AccountData & {
 }
 
 export type DaoMetadata = {
+    id: string,
     name: string,
     description: string,
     image: string,

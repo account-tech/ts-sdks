@@ -1,6 +1,7 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { SuiObjectResponse, SuiMoveObject } from "@mysten/sui/client";
 import {
-	Intent, OwnedData, AccountPreview, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
+	Intent, OwnedData, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
 	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes, Policy,
 } from "@account.tech/core";
 import {
@@ -23,6 +24,7 @@ import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
 
 export class MultisigClient extends AccountSDK {
+	previews: { id: string, name: string }[] = [];
 
 	get multisig(): Multisig {
 		return this.account as Multisig;
@@ -54,11 +56,55 @@ export class MultisigClient extends AccountSDK {
 				outcomeFactory: [Approvals],
 			}
 		);
+
+		(msClient as MultisigClient).previews = await (msClient as MultisigClient).fetchMultisigPreviews();
+
 		return msClient as MultisigClient;
+	}
+
+	async fetchMultisigPreviews(): Promise<{ id: string, name: string }[]> {
+		const allIds = this.user.accountIds;
+		if (allIds.length === 0) return [];
+
+		// Fetch all account objects in one batch
+		// Process in batches of 50 due to API limitations
+		const accountsObjs = [];
+		for (let i = 0; i < allIds.length; i += 50) {
+			const batch = allIds.slice(i, i + 50);
+			const batchResults = await this.client.multiGetObjects({
+				ids: batch,
+				options: { showContent: true }
+			});
+			accountsObjs.push(...batchResults);
+		}
+
+		// Process each account object
+		const accounts = accountsObjs
+			.filter(acc => (acc.data?.content as SuiMoveObject).type.includes(this.user.accountType))
+			.map((acc: SuiObjectResponse) => {
+				const moveObj = acc.data?.content as SuiMoveObject;
+
+				const name = (moveObj.fields as any).metadata.fields.inner.fields.contents
+					.find((entry: any) => entry.fields.key === "name")?.fields.value;
+
+				return {
+					id: (moveObj.fields as any).id.id,
+					name: name ?? ""
+				};
+			})
+			.sort((a, b) => {
+				// Create a map of id to its position in allIds for sorting
+				const idPositionMap = new Map(allIds.map((id, index) => [id, index]));
+				// Sort based on the original order in allIds
+				return idPositionMap.get(a.id)! - idPositionMap.get(b.id)!;
+			});
+
+		return accounts;
 	}
 
 	async refresh() {
 		await super.refresh();
+		this.previews = await this.fetchMultisigPreviews();
 	}
 
 	async switchMultisig(multisigId: string) {
@@ -78,7 +124,7 @@ export class MultisigClient extends AccountSDK {
 		let createdUser: TransactionPureInput | null = null;
 		if (userId === "") {
 			if (!newUser) throw new Error("User must create an user before creating a multisig");
-			createdUser = this.user.createUser(tx); // TODO: add optional params for username and avatar 
+			createdUser = this.user.createUser(tx, newUser.username, newUser.profilePicture); 
 			userId = tx.moveCall({
 				target: `${SUI_FRAMEWORK}::object::id`,
 				typeArguments: [`${ACCOUNT_PROTOCOL.V1}::user::User`],
@@ -234,8 +280,8 @@ export class MultisigClient extends AccountSDK {
 		return this.user.profile;
 	}
 
-	getUserMultisigs(): AccountPreview[] {
-		return this.user.accounts;
+	getUserMultisigs(): { id: string, name: string }[] {
+		return this.previews;
 	}
 
 	getUserInvites(): Invite[] {
@@ -474,12 +520,7 @@ export class MultisigClient extends AccountSDK {
 		const accountKioskId = this.getKiosks().assets[kioskName].id;
 		if (!accountKioskId) throw new Error("Kiosk not found");
 		const auth = this.multisig.authenticate(tx);
-		const request = commands.placeInKiosk(tx, MULTISIG_CONFIG_TYPE, nftType, auth, this.multisig.id, accountKioskId, senderKiosk, senderCap, policyId, kioskName, nftId);
-		tx.moveCall({
-			target: `${SUI_FRAMEWORK}::transfer_policy::confirm_request`,
-			typeArguments: [nftType],
-			arguments: [tx.object(policyId), request],
-		});
+		commands.placeInKiosk(tx, MULTISIG_CONFIG_TYPE, nftType, auth, this.multisig.id, accountKioskId, senderKiosk, senderCap, policyId, kioskName, nftId);
 	}
 
 	/// Delists an NFT from a Kiosk managed by the Account
