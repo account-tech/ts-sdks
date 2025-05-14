@@ -1,1 +1,1 @@
-# Account.tech Multisig TypeScript SDK
+# Account.tech Payment TypeScript SDK

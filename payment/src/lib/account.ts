@@ -257,5 +257,7 @@ export class Payment extends Account implements PaymentData {
         configPayment.deleteConfigPayment(tx, expired);
         destroyEmptyExpired(tx, expired);
     }
+
+    atomicTransfer
 }
 

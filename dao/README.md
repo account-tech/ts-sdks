@@ -1,1 +1,1 @@
-# Account.tech Multisig TypeScript SDK
+# Account.tech DAO TypeScript SDK

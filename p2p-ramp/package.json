@@ -1,0 +1,33 @@
+{
+  "name": "@account.tech/p2p-ramp",
+  "author": "Thouny <thouny@tuta.io>",
+  "description": "P2P Ramp Account SDK powered by account.tech",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "module": "./dist/esm/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
+    "build": "rm -rf dist/ && rm -rf tsconfig.tsbuildinfo && bun build:tsup && bun build:types",
+    "build:tsup": "tsup ./src/* --format esm,cjs --sourcemap",
+    "build:types": "tsc --build"
+  },
+  "dependencies": {
+    "@account.tech/core": "file:../../ts-core",
+    "@mysten/sui": "1.28.2",
+    "bun-types": "^1.2.12"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/chai": "^4.3.20",
+    "@types/node": "^20.17.46",
+    "chai": "^5.2.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  }
+}
