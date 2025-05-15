@@ -2,10 +2,11 @@ import { coinWithBalance, Transaction, TransactionObjectInput, TransactionResult
 import { SuiObjectResponse, SuiMoveObject } from "@mysten/sui/client";
 
 import {
-	Intent, OwnedData, Dep,
+	Intent, OwnedData, Dep, ActionsIntentTypes,
 	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile,
+	WithdrawAndTransferIntent,
 } from "@account.tech/core";
-import { SUI_FRAMEWORK, ACCOUNT_PROTOCOL, TransactionPureInput } from "@account.tech/core/dist/types";
+import { SUI_FRAMEWORK, ACCOUNT_PROTOCOL, TransactionPureInput, MOVE_STDLIB } from "@account.tech/core/dist/types";
 import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
@@ -35,7 +36,7 @@ export class PaymentClient extends AccountSDK {
 				accountType: Payment,
 				ownedObjects: true,
 				assetFactory: [/* we don't need managed assets as of now */],
-				intentFactory: [ConfigPaymentIntent, PayIntent],
+				intentFactory: [ConfigPaymentIntent, PayIntent, WithdrawAndTransferIntent],
 				outcomeFactory: [Pending],
 			}
 		);
@@ -90,7 +91,7 @@ export class PaymentClient extends AccountSDK {
 	}
 
 	async switchAccount(accountId: string) {
-		await this.account.refresh(accountId);
+		await super.switch(accountId);
 	}
 
 	/// Creates a payment account
@@ -118,16 +119,23 @@ export class PaymentClient extends AccountSDK {
 		const auth = this.paymentAccount.authenticate(tx, account);
 		commands.replaceMetadata(tx, PAYMENT_CONFIG_TYPE, auth, account, ["name"], [name]);
 		// update account rules if members are provided
-		let members: Member[] = [{ address: this.user.address!, roles: [Roles.Pay] }];
+		let members: Member[] = [{ address: this.user.address!, roles: [Roles.Pay, Roles.Config] }];
 		if (memberAddresses) {
-			members = members.concat(memberAddresses.map((address: string) => ({ address, roles: [] })));
+			members = members.concat(memberAddresses.map((address: string) => ({ address, roles: [Roles.Owned] })));
 		}
-
 		this.paymentAccount.atomicConfigPaymentAccount(
 			tx,
 			{ members },
 			account
 		);
+		// add AccountActions dep
+		const deps = this.getLatestExtensions()
+			.filter(ext => ["AccountProtocol", "AccountPayment", "AccountActions"].includes(ext.name))
+			.sort((a, b) => {
+				const order = ["AccountProtocol", "AccountPayment", "AccountActions"];
+				return order.indexOf(a.name) - order.indexOf(b.name);
+			});
+		this.paymentAccount.atomicConfigDeps(tx, { deps }, account);
 
 		// creator register the account in his user
 		this.paymentAccount.joinPaymentAccount(tx, createdUser ? createdUser : userId, account);
@@ -397,6 +405,56 @@ export class PaymentClient extends AccountSDK {
 			},
 			this.paymentAccount.id
 		);
+	}
+
+	initiateWithdraw(
+		tx: Transaction,
+		key: string,
+		coinType: string, // only USDC for now
+		amount: bigint,
+		recipient: string,
+	) {
+		const ids = this.mergeAndSplit(tx, coinType, [amount]);
+		const objectId = tx.moveCall({
+			target: `${MOVE_STDLIB}::vector::swap_remove`,
+			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
+			arguments: [ids, tx.pure.u64(0)],
+		});
+		const transfers = [{ objectId, recipient }];
+
+		const auth = this.paymentAccount.authenticate(tx);
+		const params = Intent.createParams(tx, {key});
+		const outcome = this.paymentAccount.emptyApprovalsOutcome(tx);
+
+		WithdrawAndTransferIntent.prototype.request(
+			tx,
+			PAYMENT_GENERICS,
+			auth,
+			this.paymentAccount.id,
+			params,
+			outcome,
+			{ transfers },
+		);
+	}
+
+	completeWithdraw(
+		tx: Transaction,
+		key: string,
+	) {
+		const intent = this.intents?.intents[key];
+		if (!intent) throw new Error("Intent not found");
+
+		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
+			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects!);
+		}
+
+		this.approve(tx, key);
+		const executable = this.paymentAccount.executeIntent(tx, key);
+
+		intent.execute(tx, PAYMENT_GENERICS, executable);
+		intent.completeExecution(tx, PAYMENT_GENERICS, executable);
+		intent.clearEmpty(tx, PAYMENT_GENERICS, key);
 	}
 
 	issuePayment(

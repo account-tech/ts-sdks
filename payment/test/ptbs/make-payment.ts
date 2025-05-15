@@ -14,7 +14,7 @@ import { ACCOUNT, executeTx, NETWORK, testKeypair } from "./utils";
 
     paymentClient.makePayment(
         tx,
-        "f35b79b6f9d0fbcdab438994594618e8df0da536801ff46d06b6ba7a9855c4ff", // payment id
+        "b3810752c7f754e69c9c0de2ac5c794c30c6c00dfb37aa0290a8a1f4633dac47", // payment id
         1n, // tip amount
     );
 

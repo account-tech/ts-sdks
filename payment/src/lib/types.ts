@@ -1,5 +1,5 @@
 import { ACCOUNT_PAYMENT } from "./constants";
-import { AccountData, Profile } from "@account.tech/core";
+import { ACCOUNT_ACTIONS, ACCOUNT_PROTOCOL, AccountData, Profile } from "@account.tech/core";
 
 export type DepStatus = {
     name: string;
@@ -10,13 +10,15 @@ export type DepStatus = {
 }
 
 export const IntentTypes = {
-    ConfigPayment: `${ACCOUNT_PAYMENT.V1.slice(2)}::config::ConfigPaymentIntent`,
-    Pay: `${ACCOUNT_PAYMENT.V1.slice(2)}::pay::PayIntent`,
+    ConfigPayment: `${ACCOUNT_PAYMENT.V1}::config::ConfigPaymentIntent`,
+    Pay: `${ACCOUNT_PAYMENT.V1}::pay::PayIntent`,
     // add more
 } as const;
 
 export const Roles = {
     Pay: `${ACCOUNT_PAYMENT.V1.slice(2)}::pay`,
+    Config: `${ACCOUNT_PROTOCOL.V1.slice(2)}::config`,
+    Owned: `${ACCOUNT_ACTIONS.V1.slice(2)}::owned_intents`,
     // add more
 } as const;
 
