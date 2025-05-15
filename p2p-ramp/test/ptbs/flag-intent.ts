@@ -1,6 +1,6 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { P2PRampClient } from "../../src/p2p-ramp-client";
-import { executeTx, NETWORK, ACCOUNT, testKeypair } from "./utils";
+import { executeTx, ACCOUNT, NETWORK, testKeypair } from "./utils";
 
 (async () => {
     const p2pramp = await P2PRampClient.init(
@@ -10,7 +10,8 @@ import { executeTx, NETWORK, ACCOUNT, testKeypair } from "./utils";
     );
 
     const tx = new Transaction();
-    p2pramp.executeHandshake(tx, "fill-buy");
+
+    p2pramp.flagAsSettled(tx, "fill-buy");
 
     executeTx(tx);
 })();

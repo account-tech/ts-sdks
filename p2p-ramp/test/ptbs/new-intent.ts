@@ -1,25 +1,21 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { DaoClient } from "../../src/dao-client";
-import { NETWORK, DAO, testKeypair, executeTx } from "./utils";
+import { P2PRampClient } from "../../src/p2p-ramp-client";
+import { NETWORK, ACCOUNT, testKeypair, executeTx } from "./utils";
 
 (async () => {
-    const dao = await DaoClient.init(
+    const p2pramp = await P2PRampClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
-        DAO
+        ACCOUNT,
     );
     const tx = new Transaction();
 
-    dao.requestConfigDao(
+    p2pramp.requestFillBuy(
         tx,
-        {key: "config-dao-2", startTime: BigInt(Math.floor(Date.now()) + 1000), endTime: BigInt(Math.floor(Date.now() + 10000))},
+        { key: "fill-buy" },
+        "0x0cfb6ff2b2b5dac100e065d8dca5e03fb3637a6e737c419ac58b74997f5ef41d",
         "0x2::sui::SUI",
-        0n,
-        0n,
-        1,
-        10n,
-        0n,
-        1n
+        100n,
     );
     
     executeTx(tx);

@@ -35,6 +35,7 @@ export function createOrder(
 
     tx.moveCall({
         target: `${P2P_RAMP.V1}::orders::create_order`,
+        typeArguments: [coinType],
         arguments: [
             auth,
             tx.object(FEES),
@@ -55,9 +56,11 @@ export function destroyOrder(
     auth: TransactionArgument,
     account: TransactionArgument | string,
     orderId: string,
+    coinType: string,
 ) {
     tx.moveCall({
         target: `${P2P_RAMP.V1}::orders::destroy_order`,
+        typeArguments: [coinType],
         arguments: [
             auth,
             typeof account === "string" ? tx.object(account) : account,

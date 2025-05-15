@@ -1,19 +1,17 @@
 import { Transaction, TransactionResult } from "@mysten/sui/transactions";
 import { SuiMoveObject, SuiObjectResponse } from "@mysten/sui/client";
-import {
-	Intent, OwnedData, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	Profile, IntentArgs,
-} from "@account.tech/core";
+import { Intent, Dep, Profile, IntentArgs } from "@account.tech/core";
 import { SUI_FRAMEWORK, ACCOUNT_PROTOCOL, TransactionPureInput } from "@account.tech/core/dist/types";
 import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
-import { P2P_RAMP_GENERICS, P2P_RAMP_CONFIG_TYPE } from "./lib/constants"; 
+import { HANDSHAKE_GENERICS, P2P_RAMP_CONFIG_TYPE } from "./lib/constants"; 
 import { P2PRamp } from "./lib/account";
 import { Handshake } from "./lib/outcome";
 import { ConfigP2PRampIntent, FillBuyIntent, FillSellIntent } from "./lib/intents";
 import { DepStatus } from "./lib/types";
 import { Orders } from "./lib/dynamic-fields";
+import { createOrder, destroyOrder } from "./lib/commands";
 
 export class P2PRampClient extends AccountSDK {
 	previews: { name: string, id: string }[] = [];
@@ -127,23 +125,49 @@ export class P2PRampClient extends AccountSDK {
 		return this.p2pramp.shareAccount(tx, account);
 	}
 
-	/// Calls the execute function for the intent, approve if not already done
-	execute(
+	flagAsPaid(
+		tx: Transaction,
+		key: string,
+	) {
+		const intent = this.getIntent(key);
+		if (!intent) throw new Error("Intent not found");
+
+		const handshake = intent.outcome as Handshake;
+		handshake.flagAsPaid(tx, key, this.p2pramp.id);
+	}
+
+	flagAsSettled(
+		tx: Transaction,
+		key: string,
+	) {
+		const intent = this.getIntent(key);
+		if (!intent) throw new Error("Intent not found");
+
+		const handshake = intent.outcome as Handshake;
+		handshake.flagAsSettled(tx, key, this.p2pramp.id);
+	}
+
+	flagAsDisputed(
+		tx: Transaction,
+		key: string,
+	) {
+		const intent = this.getIntent(key);
+		if (!intent) throw new Error("Intent not found");
+
+		const handshake = intent.outcome as Handshake;
+		handshake.flagAsDisputed(tx, key, this.p2pramp.id);
+	}
+
+	executeHandshake(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult | void {
+	) {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
 
 		const executable = this.p2pramp.executeHandshakeIntent(tx, intentKey);
 
-		let result = intent.execute(tx, P2P_RAMP_GENERICS, executable);
-		intent.completeExecution(tx, P2P_RAMP_GENERICS, executable);
-		// if no more executions scheduled after this one, destroy intent
-		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, P2P_RAMP_GENERICS, intentKey);
-		}
-		return result;
+		intent.execute(tx, HANDSHAKE_GENERICS, executable);
 	}
 
 	reorderAccounts(tx: Transaction, accountAddrs: string[]) {
@@ -216,28 +240,8 @@ export class P2PRampClient extends AccountSDK {
 		return this.managedAssets?.assets ?? {};
 	}
 
-	getOwnedObjects(): OwnedData {
-		return this.ownedObjects?.getData() ?? {} as OwnedData;
-	}
-
-	getCaps(): Caps {
-		return this.managedAssets?.assets?.["caps"] as Caps;
-	}
-
-	getCurrencies(): Currencies {
-		return this.managedAssets?.assets?.["currencies"] as Currencies;
-	}
-
-	getKiosks(): Kiosks {
-		return this.managedAssets?.assets?.["kiosks"] as Kiosks;
-	}
-
-	getPackages(): Packages {
-		return this.managedAssets?.assets?.["packages"] as Packages;
-	}
-
-	getVaults(): Vaults {
-		return this.managedAssets?.assets?.["vaults"] as Vaults;
+	getOrders(): Orders {
+		return this.managedAssets?.assets?.["orders"] as Orders;
 	}
 
 	// === Commands ===
@@ -257,6 +261,44 @@ export class P2PRampClient extends AccountSDK {
 	) {
 		const auth = this.p2pramp.authenticate(tx);
 		commands.updateVerifiedDepsToLatest(tx, P2P_RAMP_CONFIG_TYPE, auth, this.p2pramp.id);
+	}
+
+	createOrder(
+		tx: Transaction,
+		isBuy: boolean,
+		fiatAmount: bigint,
+		fiatCode: string,
+		coinAmount: bigint,
+		coinType: string,
+		minFill: bigint,
+		maxFill: bigint,
+	) {
+		const auth = this.p2pramp.authenticate(tx);
+		
+		createOrder(
+			tx, 
+			auth, 
+			this.p2pramp.id, 
+			isBuy, 
+			fiatAmount, 
+			fiatCode, 
+			coinAmount, 
+			coinType, 
+			minFill, 
+			maxFill
+		);
+	}
+
+	destroyOrder(
+		tx: Transaction,
+		orderId: string,
+	) {
+		const order = this.getOrders().assets[orderId];
+		if (!order) throw new Error("Order not found");
+		if (order.pendingFill > 0n) throw new Error("Order has pending fill");
+
+		const auth = this.p2pramp.authenticate(tx);
+		destroyOrder(tx, auth, this.p2pramp.id, orderId, order.coinType);
 	}
 
 	// === Intents ===

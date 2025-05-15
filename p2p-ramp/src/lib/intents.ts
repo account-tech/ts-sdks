@@ -117,9 +117,9 @@ export class FillBuyIntent extends Intent {
         const coinType = actions[0].type.match(/<([^>]*)>/)[1];
 
         this.args = {
-            orderId: actions[0].fields.orderId,
+            orderId: actions[0].fields.order_id,
             coinType,
-            coinAmount: actions[0].fields.amount,
+            coinAmount: actions[0].fields.coin.fields.balance,
             taker: actions[0].fields.taker,
         };
     }
@@ -135,7 +135,7 @@ export class FillBuyIntent extends Intent {
     ) {
         tx.moveCall(
             {
-                target: `${P2P_RAMP.V1}::orders::request_fill_buy_intent`,
+                target: `${P2P_RAMP.V1}::orders::request_fill_buy_order`,
                 typeArguments: [actionArgs.coinType],
                 arguments: [
                     params,
@@ -157,7 +157,8 @@ export class FillBuyIntent extends Intent {
         executable: TransactionArgument,
     ) {
         tx.moveCall({
-            target: `${P2P_RAMP.V1}::orders::execute_fill_buy_intent`,
+            target: `${P2P_RAMP.V1}::orders::execute_fill_buy_order`,
+            typeArguments: [this.args.coinType],
             arguments: [
                 executable,
                 tx.object(this.account),
@@ -166,29 +167,31 @@ export class FillBuyIntent extends Intent {
         });
     }
 
+    //! both methods not functioning right now
     clearEmpty(
         tx: Transaction,
         accountGenerics: [string, string],
         key: string,
     ) {
-        // const expired = accountProtocol.destroyEmptyIntent(
-        //     tx,
-        //     accountGenerics,
-        //     {
-        //         account: this.account,
-        //         key,
-        //     }
-        // );
-        // tx.moveCall({
-        //     target: `${P2P_RAMP.V1}::orders::delete_fill_buy`,
-        //     arguments: [
-        //         expired,
-        //     ],
-        // });
-        // return intents.destroyEmptyExpired(
-        //     tx,
-        //     expired,
-        // );
+        const expired = accountProtocol.destroyEmptyIntent(
+            tx,
+            accountGenerics,
+            {
+                account: this.account,
+                key,
+            }
+        );
+        tx.moveCall({
+            target: `${P2P_RAMP.V1}::orders::delete_fill_buy`,
+            typeArguments: [this.args.coinType],
+            arguments: [
+                expired,
+            ],
+        });
+        return intents.destroyEmptyExpired(
+            tx,
+            expired,
+        );
     }
 
     deleteExpired(
@@ -196,25 +199,26 @@ export class FillBuyIntent extends Intent {
         accountGenerics: [string, string],
         key: string,
     ) {
-        // const expired = accountProtocol.deleteExpiredIntent(
-        //     tx,
-        //     accountGenerics,
-        //     {
-        //         account: this.account,
-        //         key,
-        //         clock: CLOCK,
-        //     }
-        // );
-        // tx.moveCall({
-        //     target: `${P2P_RAMP.V1}::orders::delete_fill_buy`,
-        //     arguments: [
-        //         expired,
-        //     ],
-        // });
-        // return intents.destroyEmptyExpired(
-        //     tx,
-        //     expired,
-        // );
+        const expired = accountProtocol.deleteExpiredIntent(
+            tx,
+            accountGenerics,
+            {
+                account: this.account,
+                key,
+                clock: CLOCK,
+            }
+        );
+        tx.moveCall({
+            target: `${P2P_RAMP.V1}::orders::delete_fill_buy`,
+            typeArguments: [this.args.coinType],
+            arguments: [
+                expired,
+            ],
+        });
+        return intents.destroyEmptyExpired(
+            tx,
+            expired,
+        );
     }
 }
 
@@ -227,7 +231,7 @@ export class FillSellIntent extends Intent {
         const coinType = actions[0].type.match(/<([^>]*)>/)[1];
 
         this.args = {
-            orderId: actions[0].fields.orderId,
+            orderId: actions[0].fields.order_id,
             coinType,
             fiatAmount: actions[0].fields.amount,
             taker: actions[0].fields.taker,
@@ -245,7 +249,7 @@ export class FillSellIntent extends Intent {
     ) {
         tx.moveCall(
             {
-                target: `${P2P_RAMP.V1}::orders::request_fill_sell_intent`,
+                target: `${P2P_RAMP.V1}::orders::request_fill_sell_order`,
                 typeArguments: [actionArgs.coinType],
                 arguments: [
                     params,
@@ -264,7 +268,8 @@ export class FillSellIntent extends Intent {
         executable: TransactionArgument,
     ) {
         tx.moveCall({
-            target: `${P2P_RAMP.V1}::orders::execute_fill_sell_intent`,
+            target: `${P2P_RAMP.V1}::orders::execute_fill_sell_order`,
+            typeArguments: [this.args.coinType],
             arguments: [
                 executable,
                 tx.object(this.account),
@@ -273,29 +278,30 @@ export class FillSellIntent extends Intent {
         });
     }
 
+    //! both methods not functioning right now
     clearEmpty(
         tx: Transaction,
         accountGenerics: [string, string],
         key: string,
     ) {
-        // const expired = accountProtocol.destroyEmptyIntent(
-        //     tx,
-        //     accountGenerics,
-        //     {
-        //         account: this.account,
-        //         key,
-        //     }
-        // );
-        // tx.moveCall({
-        //     target: `${P2P_RAMP.V1}::orders::delete_fill_buy`,
-        //     arguments: [
-        //         expired,
-        //     ],
-        // });
-        // return intents.destroyEmptyExpired(
-        //     tx,
-        //     expired,
-        // );
+        const expired = accountProtocol.destroyEmptyIntent(
+            tx,
+            accountGenerics,
+            {
+                account: this.account,
+                key,
+            }
+        );
+        tx.moveCall({
+            target: `${P2P_RAMP.V1}::orders::delete_fill_sell`,
+            arguments: [
+                expired,
+            ],
+        });
+        return intents.destroyEmptyExpired(
+            tx,
+            expired,
+        );
     }
 
     deleteExpired(
@@ -303,24 +309,24 @@ export class FillSellIntent extends Intent {
         accountGenerics: [string, string],
         key: string,
     ) {
-        // const expired = accountProtocol.deleteExpiredIntent(
-        //     tx,
-        //     accountGenerics,
-        //     {
-        //         account: this.account,
-        //         key,
-        //         clock: CLOCK,
-        //     }
-        // );
-        // tx.moveCall({
-        //     target: `${P2P_RAMP.V1}::orders::delete_fill_buy`,
-        //     arguments: [
-        //         expired,
-        //     ],
-        // });
-        // return intents.destroyEmptyExpired(
-        //     tx,
-        //     expired,
-        // );
+        const expired = accountProtocol.deleteExpiredIntent(
+            tx,
+            accountGenerics,
+            {
+                account: this.account,
+                key,
+                clock: CLOCK,
+            }
+        );
+        tx.moveCall({
+            target: `${P2P_RAMP.V1}::orders::delete_fill_sell`,
+            arguments: [
+                expired,
+            ],
+        });
+        return intents.destroyEmptyExpired(
+            tx,
+            expired,
+        );
     }
 }

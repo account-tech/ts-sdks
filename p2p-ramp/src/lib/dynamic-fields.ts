@@ -22,6 +22,21 @@ export class Orders extends Asset {
             dfContents.push(...batchResults);
         }
 
-        
+        this.assets = dfContents.reduce((acc: Record<string, Order>, df) => {
+            const coinType = (df.data?.content as any).fields.value.type.match(/<([^>]*)>/)[1];
+            const fields = (df.data?.content as any).fields.value.fields;
+            acc[(df.data?.content as any).fields.name.fields.pos0] = {
+                coinType,
+                isBuy: fields.is_buy,
+                minFill: fields.min_fill,
+                maxFill: fields.max_fill,
+                fiatAmount: fields.fiat_amount,
+                fiatCode: fields.fiat_code,
+                coinAmount: fields.coin_amount,
+                coinBalance: fields.coin_balance,
+                pendingFill: fields.pending_fill,
+            };
+            return acc;
+        }, {} as Record<string, Order>);
     }
 }

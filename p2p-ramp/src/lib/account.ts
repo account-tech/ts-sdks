@@ -8,7 +8,7 @@ export class P2PRamp extends Account implements P2PRampData {
     static type = P2P_RAMP_CONFIG_TYPE;
     
     members: string[] = [];
-    fees: Record<string, bigint> = {}; // addr -> amount
+    fees: { addr: string, amount: bigint }[] = [];
     allowedCoins: string[] = [];
     allowedFiat: string[] = [];
 
@@ -19,16 +19,16 @@ export class P2PRamp extends Account implements P2PRampData {
         }
     }
 
-    async fetch(id: string = this.id)/*: Promise<DaoData> */ {
+    async fetch(id: string = this.id): Promise<P2PRampData> {
         if (!id && !this.id) {
             throw new Error("No address provided to refresh multisig");
         }
 
-        const daoAccount = await this.client.getObject({
+        const p2prampAccount = await this.client.getObject({
             id: this.id,
             options: { showContent: true },
         });
-        const fields = (daoAccount.data?.content as any).fields
+        const fields = (p2prampAccount.data?.content as any).fields
 
         const metadata = fields.metadata.fields.inner.fields.contents.map((m: any) => ({ key: m.fields.key, value: m.fields.value }));
 
@@ -43,21 +43,26 @@ export class P2PRamp extends Account implements P2PRampData {
             unverifiedDepsAllowed: fields.deps.fields.unverified_allowed,
             lockedObjects: fields.intents.fields.locked.fields.contents,
             intentsBagId: fields.intents.fields.inner.fields.id.id,
-            members: fields.config.fields.members.contents,
+            members: fields.config.fields.members.fields.contents,
         }
     }
 
-    async fetchFees(): Promise<Record<string, bigint>> {
+    async fetchFees(): Promise<any> {
         const fees = await this.client.getObject({
             id: FEES,
             options: { showContent: true },
         });
-        return (fees.data?.content as any).fields.inner;
+
+        return (fees.data?.content as any).fields;
     }
 
     async refresh(id: string = this.id) {
         this.setData(await this.fetch(id));
-        this.fees = await this.fetchFees();
+        
+        const fields = await this.fetchFees();
+        this.fees = fields.inner.fields.contents.map((fee: any) => ({ addr: fee.fields.key, amount: fee.fields.value }));
+        this.allowedCoins = fields.allowed_coins.fields.contents;
+        this.allowedFiat = fields.allowed_fiat.fields.contents;
     }
 
     setData(p2p: P2PRampData) {

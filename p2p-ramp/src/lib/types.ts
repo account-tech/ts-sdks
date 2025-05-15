@@ -9,17 +9,12 @@ export type DepStatus = {
     latestVersion: number;
 }
 
-export enum HandshakeStatus {
-    Requested,
-    Paid,
-    Settled,
-    Disputed,
-}
+export type HandshakeStatus = "Requested" | "Paid" | "Settled" | "Disputed";
 
 export const P2PRampIntentTypes = {
     ConfigP2PRamp: `${P2P_RAMP.V1}::config::ConfigP2PRampIntent`,
-    FillBuyIntent: `${P2P_RAMP.V1}::order::FillBuyIntent`,
-    FillSellIntent: `${P2P_RAMP.V1}::order::FillSellIntent`,
+    FillBuyIntent: `${P2P_RAMP.V1}::orders::FillBuyIntent`,
+    FillSellIntent: `${P2P_RAMP.V1}::orders::FillSellIntent`,
 } as const;
 
 // account.ts

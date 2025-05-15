@@ -14,18 +14,27 @@ export class Approved implements Outcome {
 export class Handshake implements Outcome {
     static type = `${P2P_RAMP.V1}::p2p_ramp::Handshake`;
 
-    constructor(
-        public fiatSender: string,
-        public coinSender: string,
-        public status: HandshakeStatus,
-    ) {}
+    accountId: string;
+    key: string;
+
+    fiatSender: string;
+    coinSender: string;
+    status: HandshakeStatus;
+
+    constructor(accountId: string, key: string, fields: any) {
+        this.accountId = accountId;
+        this.key = key;
+        this.fiatSender = fields.fields.fiat_sender;
+        this.coinSender = fields.fields.coin_sender;
+        this.status = fields.fields.status.variant;
+    }
 
     flagAsPaid(
         tx: Transaction,
         key: string,
         account: string | TransactionArgument,
     ) {
-        if (this.status !== HandshakeStatus.Requested) {
+        if (this.status !== "Requested") {
             throw new Error("Handshake is not requested");
         }
         return tx.moveCall({
@@ -42,7 +51,7 @@ export class Handshake implements Outcome {
         key: string,
         account: string | TransactionArgument,
     ) {
-        if (this.status !== HandshakeStatus.Paid) {
+        if (this.status !== "Paid") {
             throw new Error("Handshake is not paid");
         }
         return tx.moveCall({
@@ -59,7 +68,7 @@ export class Handshake implements Outcome {
         key: string,
         account: string | TransactionArgument,
     ) {
-        if (this.status === HandshakeStatus.Disputed) {
+        if (this.status === "Disputed") {
             throw new Error("Handshake is already disputed");
         }
         return tx.moveCall({

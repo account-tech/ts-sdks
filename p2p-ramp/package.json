@@ -18,7 +18,7 @@
     "build:types": "tsc --build"
   },
   "dependencies": {
-    "@account.tech/core": "file:../../ts-core",
+    "@account.tech/core": "^0.1.19",
     "@mysten/sui": "1.28.2",
     "bun-types": "^1.2.12"
   },
