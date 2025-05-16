@@ -15,7 +15,7 @@ export type IntentStatus = {
 }
 
 export const DaoIntentTypes = {
-    ConfigDao: `${ACCOUNT_DAO.V1.slice(2)}::config::ConfigDaoIntent`,
+    ConfigDao: `${ACCOUNT_DAO.V1}::config::ConfigDaoIntent`,
 } as const;
 
 export type VoteIntentArgs = IntentArgs & {

@@ -1,4 +1,4 @@
-import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
+import { Transaction, TransactionResult, TransactionObjectInput } from "@mysten/sui/transactions";
 import * as accountProtocol from "../.gen/account-protocol/account/functions";
 import * as intents from "../.gen/account-protocol/intents/functions";
 
@@ -27,11 +27,11 @@ export class ConfigDaoIntent extends Intent {
 
     request(
         tx: Transaction,
-        _accountGenerics: [string, string], // can be anything, this is just to respect the interface
-        auth: TransactionArgument,
+        _accountGenerics: null, 
+        auth: TransactionObjectInput,
         account: string,
-        params: TransactionArgument,
-        outcome: TransactionArgument,
+        params: TransactionObjectInput,
+        outcome: TransactionObjectInput,
         actionArgs: ConfigDaoArgs,
     ): TransactionResult {
 
@@ -40,10 +40,10 @@ export class ConfigDaoIntent extends Intent {
                 target: `${ACCOUNT_DAO.V1}::config::request_config_dao`,
                 typeArguments: [actionArgs.assetType],
                 arguments: [
-                    auth,
+                    tx.object(auth),
                     tx.object(account),
-                    params,
-                    outcome,
+                    tx.object(params),
+                    tx.object(outcome),
                     tx.pure.u64(actionArgs.authVotingPower),
                     tx.pure.u64(actionArgs.unstakingCooldown),
                     tx.pure.u8(actionArgs.votingRule),
@@ -57,13 +57,13 @@ export class ConfigDaoIntent extends Intent {
 
     execute(
         tx: Transaction,
-        _accountGenerics: [string, string], // can be anything, this is just to respect the interface
-        executable: TransactionArgument,
+        _accountGenerics: null,
+        executable: TransactionObjectInput,
     ): TransactionResult {
         return tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::config::execute_config_dao`,
             arguments: [
-                executable,
+                tx.object(executable),
                 tx.object(this.account),
             ],
         });

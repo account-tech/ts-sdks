@@ -12,11 +12,11 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
 
     dao.createDao(
         tx,
-        "0x2::coin::Coin<0x2::sui::SUI>",
-        1n, // authVotingPower
+        "0x2::coin::Coin<0xe49f9e753f7ae8ad968ec98bd89cd0b0dfb9bab8e86f1f421323350f8d180e1c::sity::SITY>",
+        10n, // authVotingPower
         10000n, // unstakingCooldown
         0, // votingRule
-        5n, // maxVotingPower
+        500n, // maxVotingPower
         1n, // minimumVotes
         10n, // votingQuorum
         "Accelerate",
@@ -27,7 +27,6 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
         "discord",
         "github",
         "website",
-        { username: "Thouny", profilePicture: "https://example.com/avatar.png" },
     );
 
     executeTx(tx);

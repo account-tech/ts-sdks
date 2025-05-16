@@ -634,7 +634,7 @@ export class DaoClient extends AccountSDK {
 
 		ConfigDaoIntent.prototype.request(
 			tx,
-			DAO_GENERICS,
+			null,
 			auth,
 			this.dao.id,
 			params,
