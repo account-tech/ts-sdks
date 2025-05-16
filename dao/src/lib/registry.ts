@@ -1,4 +1,5 @@
 import { SuiClient } from "@mysten/sui/client";
+import { normalizeStructTag } from "@mysten/sui/utils";
 import { REGISTRY_TABLE_ID } from "./constants";
 import { DaoMetadata } from "./types";
 
@@ -38,6 +39,7 @@ export class Registry {
             const metadata = (d.data?.content as any).fields.metadata.fields.inner.fields.contents;
             return {
                 id: d.data?.objectId,
+                assetType: normalizeStructTag((d.data?.content as any).fields.config.fields.asset_type.fields.name),
                 name: metadata.find((m: any) => m.fields.key === "name")?.fields.value,
                 description: metadata.find((m: any) => m.fields.key === "description")?.fields.value,
                 image: metadata.find((m: any) => m.fields.key === "image")?.fields.value,

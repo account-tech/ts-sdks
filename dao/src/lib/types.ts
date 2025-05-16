@@ -44,6 +44,7 @@ export type DaoData = AccountData & {
 
 export type DaoMetadata = {
     id: string,
+    assetType: string,
     name: string,
     description: string,
     image: string,

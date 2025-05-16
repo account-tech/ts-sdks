@@ -12,7 +12,7 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
 
     dao.createDao(
         tx,
-        "0x2::coin::Coin<0xe49f9e753f7ae8ad968ec98bd89cd0b0dfb9bab8e86f1f421323350f8d180e1c::sity::SITY>",
+        "0x2::coin::Coin<0x2::sui::SUI>",
         10n, // authVotingPower
         10000n, // unstakingCooldown
         0, // votingRule

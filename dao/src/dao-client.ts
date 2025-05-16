@@ -88,7 +88,8 @@ export class DaoClient extends AccountSDK {
 
 	async switchDao(daoId: string) {
 		await super.switch(daoId);
-		await this.participant?.refresh(daoId, this.dao.assetType);
+		const assetType = this.registry?.daos.find(dao => dao.id === daoId)?.assetType;
+		await this.participant?.refresh(daoId, assetType);
 	}
 
 	/// Creates a dao
@@ -293,6 +294,7 @@ export class DaoClient extends AccountSDK {
 	getDaoMetadata(): DaoMetadata {
 		return {
 			id: this.dao.id,
+			assetType: this.dao.assetType,
 			name: this.dao.metadata.find(md => md.key === "name")?.value ?? "",
 			description: this.dao.metadata.find(md => md.key === "description")?.value ?? "",
 			image: this.dao.metadata.find(md => md.key === "image")?.value ?? "",

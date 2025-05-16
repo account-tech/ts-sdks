@@ -134,18 +134,21 @@ export class Participant {
         daoAddr: string = this.daoAddr,
         assetType: string = this.assetType,
     ) {
+        this.daoAddr = daoAddr;
+        this.assetType = assetType;
         this.votes = await this.fetchVotes(daoAddr, assetType);
-
+        
         const stakedDao = await this.fetchStaked(daoAddr, assetType);
         this.staked = stakedDao.filter((staked) => staked.unstaked === null);
         this.unstaked = stakedDao.filter((staked) => staked.unstaked && BigInt(Math.floor(Date.now())) < staked.unstaked);
         this.claimable = stakedDao.filter((staked) => staked.unstaked && BigInt(Math.floor(Date.now())) >= staked.unstaked);
-
+        
         if (this.assetType.startsWith("0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin")) {
             this.coinBalance = await this.fetchCoins(assetType);
         } else {
             this.nftIds = await this.fetchNfts(assetType);
         }
+        console.log(this.assetType);
     }
 
     //**************************************************************************************************//
