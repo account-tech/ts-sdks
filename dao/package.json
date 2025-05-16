@@ -18,14 +18,14 @@
     "build:types": "tsc --build"
   },
   "dependencies": {
-    "@account.tech/core": "^0.1.18",
-    "@mysten/sui": "^1.28.2",
-    "bun-types": "^1.2.10"
+    "@account.tech/core": "^0.1.20",
+    "@mysten/sui": "^1.29.1",
+    "bun-types": "^1.2.13"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/chai": "^4.3.20",
-    "@types/node": "^20.17.31",
+    "@types/node": "^20.17.47",
     "chai": "^5.2.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.3"

@@ -87,7 +87,7 @@ export class DaoClient extends AccountSDK {
 	}
 
 	async switchDao(daoId: string) {
-		await this.account.refresh(daoId);
+		await super.switch(daoId);
 		await this.participant?.refresh(daoId, this.dao.assetType);
 	}
 
