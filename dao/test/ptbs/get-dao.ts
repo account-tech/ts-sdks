@@ -9,5 +9,5 @@ import { Dao } from "../../src/lib/account";
         testKeypair.toSuiAddress(),
         DAO
     )
-    console.log(dao.registry?.daos);
+    console.log(dao.participant?.staked);
 })();

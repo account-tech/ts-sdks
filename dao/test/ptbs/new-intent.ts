@@ -12,7 +12,7 @@ import { NETWORK, DAO, testKeypair, executeTx } from "./utils";
 
     dao.requestConfigDao(
         tx,
-        {key: "config-dao-2", startTime: BigInt(Math.floor(Date.now()) + 1000), endTime: BigInt(Math.floor(Date.now() + 10000))},
+        {key: "config-dao-3", startTime: BigInt(Math.floor(Date.now()) + 1000), endTime: BigInt(Math.floor(Date.now() + 10000))},
         "0x2::sui::SUI",
         0n,
         0n,
