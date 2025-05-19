@@ -12,11 +12,17 @@ export class Votes implements Outcome {
     results: Record<string, bigint>;
 
     constructor(daoId: string, key: string, fields: any) {
-        let dao = fields;
         this.dao = daoId;
         this.key = key;
-        this.startTime = dao.startTime;
-        this.endTime = dao.endTime;
-        this.results = dao.results;
+
+        this.startTime = fields.fields.start_time;
+        this.endTime = fields.fields.end_time;
+
+        const results = fields.fields.results.fields.contents;
+        this.results = {
+            "no": results[0].fields.value,
+            "yes": results[1].fields.value,
+            "abstain": results[2].fields.value
+        };
     }
 }

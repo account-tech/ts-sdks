@@ -148,7 +148,6 @@ export class Participant {
         } else {
             this.nftIds = await this.fetchNfts(assetType);
         }
-        console.log(this.assetType);
     }
 
     //**************************************************************************************************//

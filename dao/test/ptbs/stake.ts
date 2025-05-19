@@ -11,7 +11,7 @@ import { executeTx, NETWORK, testKeypair, DAO } from "./utils";
 
     const tx = new Transaction();
 
-    dao.stake(tx, 5000n);
+    dao.stake(tx, 50n);
 
     executeTx(tx);
 })();

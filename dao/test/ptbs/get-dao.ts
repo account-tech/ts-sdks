@@ -9,5 +9,5 @@ import { Dao } from "../../src/lib/account";
         testKeypair.toSuiAddress(),
         DAO
     )
-    console.log(dao.participant?.assetType);
+    console.log(dao.getIntent("testFirstIntent"));
 })();

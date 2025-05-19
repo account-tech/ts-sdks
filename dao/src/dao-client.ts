@@ -76,20 +76,20 @@ export class DaoClient extends AccountSDK {
 		const allIds = this.user.accountIds;
 		if (allIds.length === 0) return [];
 
-		return this.registry?.daos.filter(dao => allIds.includes(dao.id)) ?? [];
+		return this.registry!.daos.filter(dao => allIds.includes(dao.id)) ?? [];
 	}
 
 	async refresh() {
 		await super.refresh();
 		await this.participant?.refresh();
-		await this.registry?.refresh();
+		await this.registry!.refresh();
 		this.previews = await this.fetchDaoPreviews();
 	}
 
 	async switchDao(daoId: string) {
 		await super.switch(daoId);
-		const assetType = this.registry?.daos.find(dao => dao.id === daoId)?.assetType;
-		await this.participant?.refresh(daoId, assetType);
+		const assetType = this.registry!.daos.find(dao => dao.id === daoId)!.assetType;
+		this.participant = await Participant.init(this.client, daoId, assetType, this.user.address!);
 	}
 
 	/// Creates a dao
