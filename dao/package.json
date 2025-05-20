@@ -2,7 +2,7 @@
   "name": "@account.tech/dao",
   "author": "Thouny <thouny@tuta.io>",
   "description": "DAO Account SDK powered by account.tech",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "license": "Apache-2.0",
   "files": [
     "dist"
