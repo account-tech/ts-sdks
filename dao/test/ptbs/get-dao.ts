@@ -7,7 +7,6 @@ import { Dao } from "../../src/lib/account";
     const dao = await DaoClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
-        "0x94a7c4278399b995219f34b3b2f5173635b5d146641cd7b1f1988075255250ff"
     )
-    console.log(dao.getIntentStatus("please-work"));
+    await dao.refresh();
 })();

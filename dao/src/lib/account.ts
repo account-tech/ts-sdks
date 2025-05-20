@@ -25,7 +25,7 @@ export class Dao extends Account implements DaoData {
 
     async fetch(id: string = this.id)/*: Promise<DaoData> */ {
         if (!id && !this.id) {
-            throw new Error("No address provided to refresh multisig");
+            throw new Error("No address provided to refresh dao");
         }
 
         const daoAccount = await this.client.getObject({
