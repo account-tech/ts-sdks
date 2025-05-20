@@ -34,7 +34,7 @@ export type Member = {
 export type MemberProfile = Member & Profile;
 
 export type ConfigPaymentArgs = {
-    members?: Member[];
+    members: Member[];
 }
 
 export type PayArgs = {

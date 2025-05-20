@@ -382,11 +382,10 @@ export class PaymentClient extends AccountSDK {
 			tx,
 			{
 				members: [
-					{ address: this.paymentAccount.members[0].address, roles: [IntentTypes.Pay] }, // no change
-					{ address: backupAddress, roles: [] }
+					{ address: this.paymentAccount.members[0].address, roles: [Roles.Pay, Roles.Config] }, // no change
+					{ address: backupAddress, roles: [Roles.Owned] }
 				]
-			},
-			this.paymentAccount.id
+			}
 		);
 	}
 
@@ -399,11 +398,10 @@ export class PaymentClient extends AccountSDK {
 			tx,
 			{
 				members: [
-					{ address: ownerAddress, roles: [IntentTypes.Pay] },
-					{ address: this.paymentAccount.members[1].address, roles: [] } // no change
+					{ address: ownerAddress, roles: [Roles.Pay, Roles.Config] },
+					{ address: this.paymentAccount.members[1].address, roles: [Roles.Owned] } // no change
 				]
-			},
-			this.paymentAccount.id
+			}
 		);
 	}
 

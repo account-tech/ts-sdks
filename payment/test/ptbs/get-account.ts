@@ -12,5 +12,5 @@ import { ACCOUNT, NETWORK, testKeypair } from "./utils";
     // const accountId = userAccounts.find(a => a.name == "MyShop")?.id; // pick the one you want according to the name
     // await paymentClient.switchAccount(accountId!);
 
-    console.log(paymentClient.intents?.intents);
+    console.log(paymentClient.getDepsStatus());
 })();

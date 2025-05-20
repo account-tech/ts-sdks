@@ -12,9 +12,9 @@ import { ACCOUNT_PAYMENT } from "../../src/lib/constants";
     );
     const tx = new Transaction();
     
-    paymentClient.setOwnerAddress(
+    paymentClient.setRecoveryAddress(
         tx,
-        testKeypair.toSuiAddress(),
+        "0x197e6b7bb5607a333cc442849dc35a81149e0eb2559278d644cdcc3db50ffc91",
     );
 
     executeTx(tx);
