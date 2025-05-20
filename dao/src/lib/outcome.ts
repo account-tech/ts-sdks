@@ -15,14 +15,14 @@ export class Votes implements Outcome {
         this.dao = daoId;
         this.key = key;
 
-        this.startTime = fields.fields.start_time;
-        this.endTime = fields.fields.end_time;
+        this.startTime = BigInt(fields.fields.start_time);
+        this.endTime = BigInt(fields.fields.end_time);
 
         const results = fields.fields.results.fields.contents;
         this.results = {
-            "no": results[0].fields.value,
-            "yes": results[1].fields.value,
-            "abstain": results[2].fields.value
+            "no": BigInt(results[0].fields.value),
+            "yes": BigInt(results[1].fields.value),
+            "abstain": BigInt(results[2].fields.value),
         };
     }
 }

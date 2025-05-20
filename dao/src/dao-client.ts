@@ -113,7 +113,7 @@ export class DaoClient extends AccountSDK {
 		github: string,
 		website: string,
 	): TransactionResult {
-		// create the user if the user doesn't have one
+		// create the user if the user doesn"t have one
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
 		if (userId === "") {
@@ -172,11 +172,11 @@ export class DaoClient extends AccountSDK {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
 		// not optimal, but we need to get the object types to execute the intent
-		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		// @ts-ignore: Property "type" exists on the constructor for Intent subclasses
 		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
 			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects!);
 		}
-		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
+		// @ts-ignore: Property "type" exists on the constructor for Intent subclasses
 		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndVest) {
 			(intent as WithdrawAndVestIntent).initTypeById(this.ownedObjects!);
 		}
@@ -366,7 +366,7 @@ export class DaoClient extends AccountSDK {
 		const intent = this.getIntent(key);
 		const outcome = intent.outcome as Votes;
 
-		let [stage, deletable] = ['pending', false];
+		let [stage, deletable] = ["pending", false];
 
 		// Check expiration first
 		if (now >= intent.fields.expirationTime) {
@@ -374,23 +374,24 @@ export class DaoClient extends AccountSDK {
 		}
 
 		if (now > outcome.startTime) {
-			stage = 'open';
+			stage = "open";
 		}
 		if (now > outcome.endTime) {
-			stage = 'closed';
+			stage = "closed";
 		}
 
 		// Check if intent has reached quorum
+		console.log(outcome.results["yes"]);
 		if (
-			stage === 'closed' &&
-			outcome.results["yes"] + outcome.results["no"] >= this.dao.minimumVotes &&
+			(stage === "closed") &&
+			(outcome.results["yes"] + outcome.results["no"] >= this.dao.minimumVotes) &&
 			(outcome.results["yes"] * 1_000_000_000n / (outcome.results["yes"] + outcome.results["no"])) >= this.dao.votingQuorum
 		) {
-			stage = 'executable';
+			stage = "executable";
 		}
 
 		return {
-			stage: stage as 'pending' | 'open' | 'closed' | 'executable',
+			stage: stage as "pending" | "open" | "closed" | "executable",
 			deletable,
 		};
 	}
