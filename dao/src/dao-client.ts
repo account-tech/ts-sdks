@@ -460,12 +460,26 @@ export class DaoClient extends AccountSDK {
 	}
 
 	/// Modifies the name of the Account
-	modifyName(
+	modifyMetadata(
 		tx: Transaction,
-		newName: string,
+		name: string,
+		description: string,
+		image: string,
+		twitter: string,
+		telegram: string,
+		discord: string,
+		github: string,
+		website: string,
 	) {
 		const auth = this.authenticate(tx);
-		commands.replaceMetadata(tx, DAO_CONFIG_TYPE, auth, this.dao.id, ["name"], [newName]);
+		commands.replaceMetadata(
+			tx, 
+			DAO_CONFIG_TYPE, 
+			auth, 
+			this.dao.id, 
+			["name", "description", "image", "twitter", "telegram", "discord", "github", "website"], 
+			[name, description, image, twitter, telegram, discord, github, website],
+		);
 	}
 
 	/// Updates the verified deps to the latest version

@@ -10,5 +10,5 @@ import { Dao } from "../../src/lib/account";
         DAO,
     )
     
-    console.log(dao.getIntentStatus("test"));
+    console.log(dao.dao.metadata);
 })();
