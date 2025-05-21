@@ -1,4 +1,4 @@
-import { coinWithBalance, Transaction, TransactionArgument } from "@mysten/sui/transactions";
+import { coinWithBalance, Transaction, TransactionObjectArgument } from "@mysten/sui/transactions";
 import * as accountProtocol from "../.gen/account-protocol/account/functions";
 import * as intents from "../.gen/account-protocol/intents/functions";
 
@@ -21,10 +21,10 @@ export class ConfigP2PRampIntent extends Intent {
     request(
         tx: Transaction,
         _accountGenerics: null, 
-        auth: TransactionArgument,
+        auth: TransactionObjectArgument,
         account: string,
-        params: TransactionArgument,
-        outcome: TransactionArgument,
+        params: TransactionObjectArgument,
+        outcome: TransactionObjectArgument,
         actionArgs: ConfigP2PRampArgs,
     ) {
 
@@ -45,7 +45,7 @@ export class ConfigP2PRampIntent extends Intent {
     execute(
         tx: Transaction,
         _accountGenerics: null, 
-        executable: TransactionArgument,
+        executable: TransactionObjectArgument,
     ) {
         tx.moveCall({
             target: `${P2P_RAMP.V1}::config::execute_config_p2p_ramp`,
@@ -129,8 +129,8 @@ export class FillBuyIntent extends Intent {
         _accountGenerics: null,
         _auth: null,
         account: string,
-        params: TransactionArgument,
-        outcome: TransactionArgument,
+        params: TransactionObjectArgument,
+        outcome: TransactionObjectArgument,
         actionArgs: FillBuyArgs,
     ) {
         tx.moveCall(
@@ -154,7 +154,7 @@ export class FillBuyIntent extends Intent {
     execute(
         tx: Transaction,
         _accountGenerics: null,
-        executable: TransactionArgument,
+        executable: TransactionObjectArgument,
     ) {
         tx.moveCall({
             target: `${P2P_RAMP.V1}::orders::execute_fill_buy_order`,
@@ -243,8 +243,8 @@ export class FillSellIntent extends Intent {
         _accountGenerics: null,
         _auth: null,
         account: string,
-        params: TransactionArgument,
-        outcome: TransactionArgument,
+        params: TransactionObjectArgument,
+        outcome: TransactionObjectArgument,
         actionArgs: FillSellArgs,
     ) {
         tx.moveCall(
@@ -265,7 +265,7 @@ export class FillSellIntent extends Intent {
     execute(
         tx: Transaction,
         _accountGenerics: null,
-        executable: TransactionArgument,
+        executable: TransactionObjectArgument,
     ) {
         tx.moveCall({
             target: `${P2P_RAMP.V1}::orders::execute_fill_sell_order`,

@@ -9,5 +9,5 @@ import { ACCOUNT, NETWORK, testKeypair } from "./utils";
         ACCOUNT,
     )
     // console.log(p2pramp.getIntent("fill-buy").outcome);
-    console.log(p2pramp.getOrders());
+    console.log(p2pramp.registry?.accounts);
 })();

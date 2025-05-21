@@ -12,8 +12,10 @@ import { ConfigP2PRampIntent, FillBuyIntent, FillSellIntent } from "./lib/intent
 import { DepStatus } from "./lib/types";
 import { Orders } from "./lib/dynamic-fields";
 import { createOrder, destroyOrder } from "./lib/commands";
+import { Registry } from "./lib/registry";
 
 export class P2PRampClient extends AccountSDK {
+	registry?: Registry;
 	previews: { name: string, id: string }[] = [];
 
 	get p2pramp() {
@@ -41,7 +43,9 @@ export class P2PRampClient extends AccountSDK {
 				outcomeFactory: [Handshake],
 			}
 		);
+
 		(p2prampClient as P2PRampClient).previews = await (p2prampClient as P2PRampClient).fetchAccountPreviews();
+		(p2prampClient as P2PRampClient).registry = await Registry.init(p2prampClient.client);
 
 		return p2prampClient as P2PRampClient;
 	}
@@ -89,6 +93,7 @@ export class P2PRampClient extends AccountSDK {
 	async refresh() {
 		await super.refresh();
 		this.previews = await this.fetchAccountPreviews();
+		this.registry!.refresh();
 	}
 
 	async switchAccount(accountId: string) {

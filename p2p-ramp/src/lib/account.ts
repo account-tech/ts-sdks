@@ -1,7 +1,7 @@
 import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
 
 import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
-import { P2P_RAMP_CONFIG_TYPE, P2P_RAMP, FEES } from "./constants";
+import { P2P_RAMP_CONFIG_TYPE, P2P_RAMP, FEES, REGISTRY } from "./constants";
 import { P2PRampData } from "./types";
 
 export class P2PRamp extends Account implements P2PRampData {
@@ -60,7 +60,7 @@ export class P2PRamp extends Account implements P2PRampData {
         this.setData(await this.fetch(id));
         
         const fields = await this.fetchFees();
-        this.fees = fields.inner.fields.contents.map((fee: any) => ({ addr: fee.fields.key, amount: fee.fields.value }));
+        this.fees = fields.collectors.fields.contents.map((fee: any) => ({ addr: fee.fields.key, amount: fee.fields.value }));
         this.allowedCoins = fields.allowed_coins.fields.contents;
         this.allowedFiat = fields.allowed_fiat.fields.contents;
     }
@@ -94,6 +94,7 @@ export class P2PRamp extends Account implements P2PRampData {
         return tx.moveCall({
             target: `${P2P_RAMP.V1}::p2p_ramp::new_account`,
             arguments: [
+                tx.object(REGISTRY),
                 tx.object(EXTENSIONS),
             ],
         });
