@@ -10,7 +10,7 @@ export type DepStatus = {
 }
 
 export type IntentStatus = {
-    stage: 'pending' | 'open' | 'closed' | 'executable'; // vote not open > voting time > vote closed > executable
+    stage: 'pending' | 'active' | 'failed' | 'success' | 'executable'; // vote not open > voting time > vote closed > executable
     deletable: boolean; // can be deleted because expiration time reached, (can still be resolved or executed)
 }
 

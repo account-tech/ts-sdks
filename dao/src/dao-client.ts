@@ -377,21 +377,28 @@ export class DaoClient extends AccountSDK {
 			stage = "open";
 		}
 		if (now > outcome.endTime) {
-			stage = "closed";
+			stage = "failed";
 		}
 
 		// Check if intent has reached quorum
-		console.log(outcome.results["yes"]);
 		if (
-			(stage === "closed") &&
+			(now > outcome.endTime) &&
 			(outcome.results["yes"] + outcome.results["no"] >= this.dao.minimumVotes) &&
 			(outcome.results["yes"] * 1_000_000_000n / (outcome.results["yes"] + outcome.results["no"])) >= this.dao.votingQuorum
+		) {
+			stage = "success";
+		}
+
+		// Check if execution time reached 
+		if (
+			(stage = "success") &&
+			now >= intent.fields.executionTimes[0]
 		) {
 			stage = "executable";
 		}
 
 		return {
-			stage: stage as "pending" | "open" | "closed" | "executable",
+			stage: stage as "pending" | "active" | "failed" | "success" | "executable",
 			deletable,
 		};
 	}
