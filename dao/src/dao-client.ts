@@ -374,7 +374,7 @@ export class DaoClient extends AccountSDK {
 		}
 
 		if (now > outcome.startTime) {
-			stage = "open";
+			stage = "active";
 		}
 		if (now > outcome.endTime) {
 			stage = "failed";
