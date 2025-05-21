@@ -7,6 +7,8 @@ import { Dao } from "../../src/lib/account";
     const dao = await DaoClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
+        DAO,
     )
-    await dao.refresh();
+    
+    console.log(dao.getIntentStatus("test"));
 })();

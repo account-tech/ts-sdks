@@ -5,7 +5,7 @@ import { Transaction } from "@mysten/sui/transactions";
 export const NETWORK = "testnet";
 export const testKeypair = Ed25519Keypair.fromSecretKey(Uint8Array.from(Buffer.from("AM06bExREdFceWiExfSacTJ+64AQtFl7SRkSiTmAqh6F", "base64")).slice(1));;
 
-export const DAO = "0xfde963bd52e76037fa1a01c83fa2fde84c69a239c5be93de978c437e20344c89";
+export const DAO = "0x0689acda9df8d2633b96b9c6ca3bd904fa90f72c4434f1412996eddf65d105d6";
 
 export async function executeTx(tx: Transaction) {
     const client = new SuiClient({ url: getFullnodeUrl(NETWORK) });

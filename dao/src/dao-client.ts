@@ -388,10 +388,10 @@ export class DaoClient extends AccountSDK {
 		) {
 			stage = "success";
 		}
-
+		
 		// Check if execution time reached 
 		if (
-			(stage = "success") &&
+			(stage === "success") &&
 			now >= intent.fields.executionTimes[0]
 		) {
 			stage = "executable";
