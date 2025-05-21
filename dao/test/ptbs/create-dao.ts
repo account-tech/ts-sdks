@@ -14,7 +14,7 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
         tx,
         "0x2::coin::Coin<0x2::sui::SUI>",
         10n, // authVotingPower
-        10000n, // unstakingCooldown
+        0n, // unstakingCooldown
         0, // votingRule
         500n, // maxVotingPower
         1n, // minimumVotes

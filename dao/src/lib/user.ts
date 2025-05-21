@@ -3,7 +3,7 @@ import { normalizeStructTag } from "@mysten/sui/utils";
 
 import { Vote, Staked } from "./types";
 import { ACCOUNT_DAO } from "./constants";
-import { coinWithBalance, Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
+import { coinWithBalance, Transaction, TransactionObjectArgument } from "@mysten/sui/transactions";
 // import { mergeStakedCoin, mergeStakedObject, newStakedCoin, newStakedObject, stakeCoin, stakeObject, unstake, splitStakedCoin } from "src/.gen/account-dao/dao/functions";
 
 export class Participant {
@@ -164,7 +164,7 @@ export class Participant {
         
         this.mergeAllStaked(tx);
         // if there is no staked object, we need to create a new one
-        let staked: TransactionArgument;
+        let staked: TransactionObjectArgument;
         if (this.staked.length == 0) {
             staked = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::new_staked_coin`,
@@ -196,7 +196,7 @@ export class Participant {
         
         this.mergeAllStaked(tx);
         // if there is no staked object, we need to create a new one
-        let staked: TransactionArgument;
+        let staked: TransactionObjectArgument;
         if (this.staked.length == 0) {
             staked = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::new_staked_object`,
@@ -220,7 +220,7 @@ export class Participant {
         }
     }
 
-    unstakeCoins(tx: Transaction, amount: bigint): TransactionResult {
+    unstakeCoins(tx: Transaction, amount: bigint): TransactionObjectArgument {
         if (!this.isCoin()) {
             throw new Error("Asset is not a coin");
         }
@@ -230,7 +230,7 @@ export class Participant {
 
         this.mergeAllStaked(tx);
         // split staked coin with the amount to unstake if necessary
-        let to_unstake: TransactionResult;
+        let to_unstake: TransactionObjectArgument;
         if (amount < this.staked.reduce((acc, staked) => acc + staked.value, 0n)) {
             to_unstake = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::split_staked_coin`,
@@ -238,11 +238,7 @@ export class Participant {
                 arguments: [tx.object(this.staked[0].id), tx.pure.u64(amount)]
             });
         } else {
-            to_unstake = tx.moveCall({
-                target: `0x2::object::id`,
-                typeArguments: [`${ACCOUNT_DAO.V1}::dao::Staked<${this.assetType}>`],
-                arguments: [tx.object(this.staked[0].id)],
-            });
+            to_unstake = tx.object(this.staked[0].id);
         }
         // start unstake process for newly created staked coin
         tx.moveCall({
@@ -254,7 +250,7 @@ export class Participant {
         return to_unstake;
     }
 
-    unstakeNfts(tx: Transaction, nftIds: string[]): TransactionResult {
+    unstakeNfts(tx: Transaction, nftIds: string[]): TransactionObjectArgument {
         if (this.isCoin()) {
             throw new Error("Asset is a coin");
         }
@@ -264,7 +260,7 @@ export class Participant {
 
         this.mergeAllStaked(tx);
         // split staked object with the nft ids to unstake if necessary
-        let to_unstake: TransactionResult;
+        let to_unstake: TransactionObjectArgument;
         if (nftIds.length < this.staked.reduce((acc, staked) => acc + staked.value, 0n)) {
             to_unstake = tx.moveCall({
                 target: `${ACCOUNT_DAO.V1}::dao::split_staked_object`,
@@ -272,11 +268,7 @@ export class Participant {
                 arguments: [tx.object(this.staked[0].id), tx.pure.vector("id", nftIds)]
             });
         } else {
-            to_unstake = tx.moveCall({
-                target: `0x2::object::id`,
-                typeArguments: [`${ACCOUNT_DAO.V1}::dao::Staked<${this.assetType}>`],
-                arguments: [tx.object(this.staked[0].id)],
-            });
+            to_unstake = tx.object(this.staked[0].id);
         }
         // start unstake process for newly created staked object
         tx.moveCall({
@@ -288,7 +280,7 @@ export class Participant {
         return to_unstake;
     }
 
-    claimUnstaked(tx: Transaction, staked: TransactionArgument) {
+    claimUnstaked(tx: Transaction, staked: TransactionObjectArgument) {
         tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::claim_and_keep`,
             typeArguments: [this.assetType],
