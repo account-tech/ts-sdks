@@ -10,16 +10,12 @@ import { NETWORK, DAO, testKeypair, executeTx } from "./utils";
     );
     const tx = new Transaction();
 
-    dao.requestConfigDao(
+    dao.requestWithdrawAndTransfer(
         tx,
         {key: "test", startTime: BigInt(Math.floor(Date.now()) + 1000), endTime: BigInt(Math.floor(Date.now() + 10000))},
-        "0x2::coin::Coin<0x2::sui::SUI>",
-        50n,
-        0n,
-        0,
-        200n,
-        1n,
-        500000000n
+        [{coinType: "0x2::sui::SUI", coinAmount: 50n}],
+        [],
+        "0xfcd5f2eee4ca6d81d49c85a1669503b7fc8e641b406fe7cdb696a67ef861492c",
     );
     
     executeTx(tx);

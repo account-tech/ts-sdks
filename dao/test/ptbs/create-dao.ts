@@ -19,14 +19,14 @@ import { executeTx, NETWORK, testKeypair } from "./utils";
         500n, // maxVotingPower
         1n, // minimumVotes
         10n, // votingQuorum
-        "Accelerate",
-        "description",
-        "image",
-        "twitter",
+        "Account.tech",
+        "Best Move framework for building on Sui",
+        "https://pbs.twimg.com/profile_images/1895901990133039104/mnVx46Lt_400x400.jpg",
+        "https://x.com/accountdottech",
         "telegram",
         "discord",
-        "github",
-        "website",
+        "https://github.com/account-tech",
+        "https://account.tech",
     );
 
     executeTx(tx);

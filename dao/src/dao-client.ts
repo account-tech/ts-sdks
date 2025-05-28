@@ -112,8 +112,8 @@ export class DaoClient extends AccountSDK {
 		discord: string,
 		github: string,
 		website: string,
-	): TransactionResult {
-		// create the user if the user doesn"t have one
+	) {
+		// create the user if the user doesn't have one
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
 		if (userId === "") {
@@ -134,7 +134,7 @@ export class DaoClient extends AccountSDK {
 		// transfer the user if just created
 		if (createdUser) this.user.transferUser(tx, createdUser, this.user.address!);
 		// share the dao
-		return this.dao.shareDao(tx, daoWithMetadata);
+		this.dao.shareDao(tx, daoWithMetadata);
 	}
 
 	authenticate(tx: Transaction) {

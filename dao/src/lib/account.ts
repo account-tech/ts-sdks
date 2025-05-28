@@ -1,4 +1,4 @@
-import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
+import { Transaction, TransactionObjectArgument, TransactionResult } from "@mysten/sui/transactions";
 import { normalizeStructTag } from "@mysten/sui/utils";
 
 import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
@@ -133,7 +133,7 @@ export class Dao extends Account implements DaoData {
     // only callable before sharing
     addMetadata(
         tx: Transaction,
-        dao: TransactionArgument,
+        dao: TransactionObjectArgument,
         name: string,
         description: string,
         image: string,
@@ -155,9 +155,9 @@ export class Dao extends Account implements DaoData {
 
     shareDao(
         tx: Transaction,
-        account: TransactionArgument,
-    ): TransactionResult {
-        return tx.moveCall({
+        account: TransactionObjectArgument,
+    ) {
+        tx.moveCall({
             package: SUI_FRAMEWORK,
             module: "transfer",
             function: "public_share_object",
@@ -168,10 +168,10 @@ export class Dao extends Account implements DaoData {
 
     joinDao(
         tx: Transaction,
-        user: string | TransactionArgument,
-        account: string | TransactionArgument,
-    ): TransactionResult {
-        return tx.moveCall({
+        user: string | TransactionObjectArgument,
+        account: string | TransactionObjectArgument,
+    ) {
+        tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::join`,
             arguments: [
                 typeof user === "string" ? tx.object(user) : user,
@@ -184,8 +184,8 @@ export class Dao extends Account implements DaoData {
         tx: Transaction,
         user: string,
         account: string,
-    ): TransactionResult {
-        return tx.moveCall({
+    ) {
+        tx.moveCall({
             target: `${ACCOUNT_DAO.V1}::dao::leave`,
             arguments: [
                 tx.object(user),
@@ -196,8 +196,8 @@ export class Dao extends Account implements DaoData {
 
     authenticate(
         tx: Transaction,
-        staked: string | TransactionArgument,
-        account: string | TransactionArgument = this.id,
+        staked: string | TransactionObjectArgument,
+        account: string | TransactionObjectArgument = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
@@ -231,7 +231,7 @@ export class Dao extends Account implements DaoData {
     executeVotesIntent(
         tx: Transaction,
         key: string,
-        account: string | TransactionArgument = this.id,
+        account: string | TransactionObjectArgument = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");

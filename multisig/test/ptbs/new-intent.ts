@@ -12,23 +12,12 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestConfigMultisig(
+    ms.requestWithdrawAndTransfer(
         tx,
         {key: "config-multisig" },
-        1,
+        [{coinType: "0x2::sui::SUI", coinAmount: 50n}],
         [],
-        [
-            {
-                address: "0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161",
-                weight: 1,
-                roles: []
-            },
-            {
-                address: "0x08e133f696af486466f3b95b677448a7f00fa1e0236443348ed22eb0506d7622",
-                weight: 1,
-                roles: []
-            },
-        ]
+        "0xfcd5f2eee4ca6d81d49c85a1669503b7fc8e641b406fe7cdb696a67ef861492c",
     );
     
     executeTx(tx);

@@ -1,10 +1,10 @@
 export enum ACCOUNT_DAO {
-    V1 = "0x5be3606a4e390ec4f23167e2ee486bfcb544ad0128285321b7e813061af82fec",
+    V1 = "0x63811e3db20254a9273ce0757a28578485268b57f4a10efde7680f97f1a88908",
 }
 // Types
 export const DAO_CONFIG_TYPE = `${ACCOUNT_DAO.V1}::dao::Dao`;
 export const DAO_GENERICS: [string, string] = [`${ACCOUNT_DAO.V1}::dao::Dao`, `${ACCOUNT_DAO.V1}::dao::Votes`];
 // Shared objects
-export const DAO_REGISTRY = "0x96408fae73d1fafd953792609423d226c76aef2ee5bde01bbc42fefcde83e50d";
-export const REGISTRY_TABLE_ID = "0x32c657a2f6b04ae3680283daeaa31165abe6a130ff04ac9d70b5476c801d9790";
+export const DAO_REGISTRY = "0x37a7913a6b71467905d65feb0ed2e5afb413488ba8271fe392455b0735e8e7de";
+export const REGISTRY_TABLE_ID = "0x7552be0e31c8b04cc88f353948e856dfa8dd18bfff87ddfc5f99361c0715573c";
 export const DAO_FEES = ""; // none for now
