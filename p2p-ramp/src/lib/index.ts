@@ -5,3 +5,4 @@ export * from "./account";
 export * from "./types";
 export * from "./commands";
 export * from "./registry"
+export * from "./fees"
