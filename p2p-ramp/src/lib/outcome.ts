@@ -1,7 +1,7 @@
 import { Transaction, TransactionArgument } from "@mysten/sui/transactions";
-import { Outcome } from "@account.tech/core";
 import { P2P_RAMP } from "./constants";
 import { HandshakeStatus } from "./types";
+import {Outcome} from "@account.tech/core/lib/intents";
 
 export class Approved implements Outcome {
     static type = `${P2P_RAMP.V1}::p2p_ramp::Approved`;

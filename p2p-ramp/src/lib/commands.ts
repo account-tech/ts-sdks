@@ -1,4 +1,4 @@
-import { SUI_FRAMEWORK } from "@account.tech/core";
+import { SUI_FRAMEWORK } from "@account.tech/core/types";
 import { coinWithBalance, Transaction, TransactionArgument } from "@mysten/sui/transactions";
 import { FEES, P2P_RAMP } from "./constants";
 

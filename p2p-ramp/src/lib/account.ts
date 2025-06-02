@@ -1,8 +1,9 @@
 import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
 
-import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
 import { P2P_RAMP_CONFIG_TYPE, P2P_RAMP, FEES, REGISTRY } from "./constants";
 import { P2PRampData } from "./types";
+import {ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK} from "@account.tech/core/types";
+import {Account, Dep} from "@account.tech/core/lib/account";
 
 export class P2PRamp extends Account implements P2PRampData {
     static type = P2P_RAMP_CONFIG_TYPE;

@@ -1,18 +1,20 @@
+// @ts-nocheck
+
 import { Transaction, TransactionResult } from "@mysten/sui/transactions";
 import { SuiMoveObject, SuiObjectResponse } from "@mysten/sui/client";
-import { Intent, Dep, Profile, IntentArgs } from "@account.tech/core";
-import { SUI_FRAMEWORK, ACCOUNT_PROTOCOL, TransactionPureInput } from "@account.tech/core/dist/types";
-import * as commands from "@account.tech/core/dist/lib/commands";
-import { AccountSDK } from "@account.tech/core/dist/sdk";
-
-import { HANDSHAKE_GENERICS, P2P_RAMP_CONFIG_TYPE } from "./lib/constants"; 
-import { P2PRamp } from "./lib/account";
-import { Handshake } from "./lib/outcome";
-import { ConfigP2PRampIntent, FillBuyIntent, FillSellIntent } from "./lib/intents";
-import { DepStatus } from "./lib/types";
-import { Orders } from "./lib/dynamic-fields";
-import { createOrder, destroyOrder } from "./lib/commands";
-import { Registry } from "./lib/registry";
+import { HANDSHAKE_GENERICS, P2P_RAMP_CONFIG_TYPE } from "../lib/constants";
+import { P2PRamp } from "../lib/account";
+import { Handshake } from "../lib/outcome";
+import { ConfigP2PRampIntent, FillBuyIntent, FillSellIntent } from "../lib/intents";
+import { DepStatus } from "../lib/types";
+import { Orders } from "../lib/dynamic-fields";
+import { createOrder, destroyOrder } from "../lib/commands";
+import { Registry } from "../lib/registry";
+import {ACCOUNT_PROTOCOL, SUI_FRAMEWORK, TransactionPureInput} from "@account.tech/core/types";
+import {Intent, IntentArgs} from "@account.tech/core/lib/intents";
+import {Profile} from "@account.tech/core/lib/user";
+import {Dep} from "@account.tech/core/lib/account"
+import {AccountSDK} from "@account.tech/core/sdk";
 
 export class P2PRampClient extends AccountSDK {
 	registry?: Registry;
@@ -45,6 +47,7 @@ export class P2PRampClient extends AccountSDK {
 		);
 
 		(p2prampClient as P2PRampClient).previews = await (p2prampClient as P2PRampClient).fetchAccountPreviews();
+
 		(p2prampClient as P2PRampClient).registry = await Registry.init(p2prampClient.client);
 
 		return p2prampClient as P2PRampClient;

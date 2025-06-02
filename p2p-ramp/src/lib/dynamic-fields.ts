@@ -1,6 +1,6 @@
 import { Order } from "./types";
-import { Asset } from "@account.tech/core";
 import { P2P_RAMP } from "./constants";
+import {Asset} from "@account.tech/core/lib/objects";
 
 export class Orders extends Asset {
     override type = "orders";
