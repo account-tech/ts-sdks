@@ -10,5 +10,6 @@ import { Dao } from "../../src/lib/account";
         DAO,
     )
     
-    console.log(dao.participant?.staked);
+    const vestings = await dao.getVestingsWithCaps();
+    console.log(vestings);
 })();

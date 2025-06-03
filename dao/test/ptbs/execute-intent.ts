@@ -1,16 +1,16 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { MultisigClient } from "../../src/multisig-client";
-import { executeTx, NETWORK, MULTISIG, testKeypair } from "./utils";
+import { DaoClient } from "../../src/dao-client";
+import { executeTx, NETWORK, DAO, testKeypair } from "./utils";
 
 (async () => {
-    const ms = await MultisigClient.init(
+    const dao = await DaoClient.init(
         NETWORK,
         testKeypair.toSuiAddress(),
-        MULTISIG,
+        DAO,
     );
 
     const tx = new Transaction();
-    ms.execute(tx, testKeypair.toSuiAddress(), "borrow-cap");
+    dao.execute(tx, "spend-and-vest");
 
     executeTx(tx);
 })();
