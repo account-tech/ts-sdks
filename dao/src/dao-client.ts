@@ -227,7 +227,9 @@ export class DaoClient extends AccountSDK {
 		this.dao.leaveDao(tx, this.user.id, daoId);
 	}
 
-	// === Staking ===
+	//**************************************************************************************************//
+	// Staking                                                                                          //
+	//**************************************************************************************************//
 
 	stake(tx: Transaction, assets: bigint | string[]) {
 		if (this.participant?.isCoin()) {
@@ -276,7 +278,9 @@ export class DaoClient extends AccountSDK {
 			.forEach(vote => this.participant?.destroyVote(tx, vote.id));
 	}
 
-	// === Getters ===
+	//**************************************************************************************************//
+	// Getters                                                                                          //
+	//**************************************************************************************************//
 
 	/// Returns the latest deps from the extensions
 	getLatestExtensions(): Dep[] {
@@ -431,7 +435,9 @@ export class DaoClient extends AccountSDK {
 		return this.managedAssets?.assets?.["vaults"] as Vaults;
 	}
 
-	// === Commands ===
+	//**************************************************************************************************//
+	// Commands                                                                                         //
+	//**************************************************************************************************//
 
 	/// Automatically merges and splits coins, then returns the ids of the newly created coins to be used in an intent
 	mergeAndSplit(
@@ -621,7 +627,38 @@ export class DaoClient extends AccountSDK {
 		commands.closeVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
 	}
 
-	// === Intents ===
+	// Vesting 
+
+	async getVestingsWithCaps(): Promise<{capId: string, vestingId: string, coinType: string, balance: bigint, lastClaimed: bigint, startTimestamp: bigint, endTimestamp: bigint, recipient: string}[]> {
+		if (!this.user.address) throw new Error("User address not found");
+		const caps = await commands.getCaps(this.client, this.user.address!);
+		const vestings = await commands.getVestings(this.client, caps.map(cap => cap.vestingId));
+		
+		return vestings.map(vesting => ({
+			capId: caps.find(cap => cap.vestingId === vesting.id)?.capId!,
+			vestingId: vesting.id,
+			coinType: vesting.coinType,
+			balance: vesting.balance,
+			lastClaimed: vesting.lastClaimed,
+			startTimestamp: vesting.startTimestamp,
+			endTimestamp: vesting.endTimestamp,
+			recipient: vesting.recipient,
+		}));
+	}
+
+	// provide endTimestamp to automatically delete the vesting and cap objects if empty after claiming
+	claimVested(tx: Transaction, coinType: string, vestingId: string, capId: string, endTimestamp?: bigint) {
+		commands.claim(tx, coinType, vestingId, capId);
+
+		if (endTimestamp && Date.now() > endTimestamp) {
+			commands.destroyEmpty(tx, coinType, vestingId);
+			commands.destroyCap(tx, capId);
+		}
+	}
+
+	//**************************************************************************************************//
+	// Intents                                                                                          //
+	//**************************************************************************************************//
 
 	requestEmpty(
 		tx: Transaction,
@@ -1119,7 +1156,9 @@ export class DaoClient extends AccountSDK {
 		);
 	}
 
-	/// === Custom executors ===
+	//**************************************************************************************************//
+	// Custom executors                                                                                 //
+	//**************************************************************************************************//
 
 	executeBorrowCap(
 		tx: Transaction,
