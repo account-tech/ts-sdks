@@ -15,6 +15,7 @@ import {Intent, IntentArgs} from "@account.tech/core/lib/intents";
 import {Profile} from "@account.tech/core/lib/user";
 import {Dep} from "@account.tech/core/lib/account"
 import {AccountSDK} from "@account.tech/core/sdk";
+import * as commands from "@account.tech/core/lib/commands";
 
 export class P2PRampClient extends AccountSDK {
 	registry?: Registry;
