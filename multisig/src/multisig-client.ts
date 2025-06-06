@@ -18,10 +18,11 @@ import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
 import { MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./lib/constants"; 
-import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes } from "./lib/types";
+import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes, IntentRole } from "./lib/types";
 import { Multisig } from "./lib/account";
 import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
+import { ActionsRoles } from "@account.tech/core";
 
 export class MultisigClient extends AccountSDK {
 	previews: { id: string, name: string }[] = [];
@@ -119,6 +120,9 @@ export class MultisigClient extends AccountSDK {
 		memberAddresses?: string[],
 		globalThreshold?: number,
 	) {
+		if (memberAddresses && globalThreshold && (memberAddresses.length - 1) < globalThreshold) {
+			throw new Error("Global threshold must be smaller than the number of members");
+		}
 		// create the user if the user doesn't have one
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
@@ -399,6 +403,18 @@ export class MultisigClient extends AccountSDK {
 	// 	}
 	// }
 
+	// role is package_id::module_name and managedName is the name of the managed asset (vault, package, kiosk, coinType, etc)
+	constructRole(role: IntentRole, managedName: string): string {
+		if (
+			role as string !== ActionsRoles.Currency &&
+			role as string !== ActionsRoles.Kiosk &&
+			role as string !== ActionsRoles.Vault &&
+			role as string !== ActionsRoles.PackageUpgrade
+		) throw new Error("Role doesn't need a managed name");
+
+		return `${role}::${managedName}`;
+	}
+
 	getManagedAssets(): Record<string, any> {
 		return this.managedAssets?.assets ?? {};
 	}
@@ -577,30 +593,30 @@ export class MultisigClient extends AccountSDK {
 	/// Opens a Treasury in the Account
 	openVault(
 		tx: Transaction,
-		treasuryName: string,
+		vaultName: string,
 	) {
 		const auth = this.multisig.authenticate(tx);
-		commands.openVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, treasuryName);
+		commands.openVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, vaultName);
 	}
 
 	/// Deposits an object into the Treasury from the caller wallet
 	depositFromWallet(
 		tx: Transaction,
 		coinType: string,
-		treasuryName: string,
+		vaultName: string,
 		coin: TransactionObjectInput,
 	) {
 		const auth = this.multisig.authenticate(tx);
-		commands.depositFromWallet(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, treasuryName, coin);
+		commands.depositFromWallet(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, vaultName, coin);
 	}
 
 	/// Closes an empty Treasury managed by the Account
 	closeVault(
 		tx: Transaction,
-		treasuryName: string,
+		vaultName: string,
 	) {
 		const auth = this.multisig.authenticate(tx);
-		commands.closeVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, treasuryName);
+		commands.closeVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, vaultName);
 	}
 
 	// === Intents ===
@@ -1071,7 +1087,7 @@ export class MultisigClient extends AccountSDK {
 	requestSpendAndTransfer(
 		tx: Transaction,
 		intentArgs: IntentArgs,
-		treasuryName: string,
+		vaultName: string,
 		coinType: string,
 		transfers: { amount: bigint, recipient: string }[],
 	) {
@@ -1086,7 +1102,7 @@ export class MultisigClient extends AccountSDK {
 			this.multisig.id,
 			params,
 			outcome,
-			{ treasuryName, coinType, transfers },
+			{ vaultName, coinType, transfers },
 		);
 
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
@@ -1095,7 +1111,7 @@ export class MultisigClient extends AccountSDK {
 	requestSpendAndVest(
 		tx: Transaction,
 		intentArgs: IntentArgs,
-		treasuryName: string,
+		vaultName: string,
 		coinType: string,
 		amount: bigint,
 		start: bigint,
@@ -1113,7 +1129,7 @@ export class MultisigClient extends AccountSDK {
 			this.multisig.id,
 			params,
 			outcome,
-			{ treasuryName, coinType, amount, start, end, recipient },
+			{ vaultName, coinType, amount, start, end, recipient },
 		);
 
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);

@@ -1,5 +1,5 @@
 import { ACCOUNT_MULTISIG } from "./constants";
-import { AccountData, Profile } from "@account.tech/core";
+import { AccountData, ActionsRoles, Profile, ProtocolRoles } from "@account.tech/core";
 
 export type DepStatus = {
     name: string;
@@ -9,8 +9,17 @@ export type DepStatus = {
     latestVersion: number;
 }
 
+export type IntentRole =
+    | typeof ProtocolRoles[keyof typeof ProtocolRoles]
+    | typeof ActionsRoles[keyof typeof ActionsRoles]
+    | typeof MultisigRoles[keyof typeof MultisigRoles];
+
+export const MultisigRoles = {
+    MultisigConfig: `${ACCOUNT_MULTISIG.V1.slice(2)}::config`,
+} as const;
+
 export const MultisigIntentTypes = {
-    ConfigMultisig: `${ACCOUNT_MULTISIG.V1.slice(2)}::config::ConfigMultisigIntent`,
+    ConfigMultisig: `${ACCOUNT_MULTISIG.V1}::config::ConfigMultisigIntent`,
 } as const;
 
 export type MultisigData = AccountData & {

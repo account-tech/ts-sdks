@@ -12,13 +12,16 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestSpendAndTransfer (
+    ms.requestConfigMultisig(
         tx,
-        {key: "spend" },
-        "Investment",
-        "0x2::sui::SUI",
-        [{ amount: 5n, recipient: "0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161"}]
+        { key: "config-multisig" },
+        2, // keep the current global threshold
+        [{ name: ms.constructRole(ActionsRoles.Vault, "Investment"), threshold: 1 }],
+        [
+            { address: testKeypair.toSuiAddress(), weight: 1, roles: [ms.constructRole(ActionsRoles.Vault, "Investment")] },
+            { address: "0x564c04d68f90ee093d7e2ab3014e4c602eadad24d09a51d21541510d43b946ac", weight: 1, roles: [] }
+        ],
     );
-    
+
     executeTx(tx);
 })();
