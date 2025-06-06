@@ -16,14 +16,13 @@ import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, AC
 import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
-import { DAO_GENERICS, DAO_CONFIG_TYPE } from "./lib/constants"; 
+import { DAO_GENERICS, DAO_CONFIG_TYPE } from "./lib/constants";
 import { Dao } from "./lib/account";
 import { Votes } from "./lib/outcome";
 import { ConfigDaoIntent } from "./lib/intents";
-import { DaoData, DaoMetadata, DepStatus, IntentRole, IntentStatus, VoteIntentArgs } from "./lib/types";
+import { DaoData, DaoMetadata, DepStatus, IntentStatus, VoteIntentArgs } from "./lib/types";
 import { Participant } from "./lib/user";
 import { Registry } from "./lib/registry";
-import { ActionsRoles } from "@account.tech/core";
 
 export class DaoClient extends AccountSDK {
 	registry?: Registry
@@ -69,7 +68,7 @@ export class DaoClient extends AccountSDK {
 				daoClient.client, daoId, (daoClient.account as Dao).assetType, userAddr
 			);
 		}
-		
+
 		return daoClient as DaoClient;
 	}
 
@@ -118,7 +117,7 @@ export class DaoClient extends AccountSDK {
 		let userId: TransactionPureInput = this.user.id;
 		let createdUser: TransactionPureInput | null = null;
 		if (userId === "") {
-			createdUser = this.user.createUser(tx); 
+			createdUser = this.user.createUser(tx);
 			userId = tx.moveCall({
 				target: `${SUI_FRAMEWORK}::object::id`,
 				typeArguments: [`${ACCOUNT_PROTOCOL.V1}::user::User`],
@@ -255,16 +254,16 @@ export class DaoClient extends AccountSDK {
 		}
 	}
 
-	claim(tx: Transaction) { 
+	claim(tx: Transaction) {
 		this.participant?.claimAll(tx);
 	}
-	
+
 	// === Staking Disabled (unstakingCooldown == 0n) ===
-	
+
 	vote(tx: Transaction, intentKey: string, answer: "no" | "yes" | "abstain") {
 		this.participant?.vote(tx, intentKey, this.participant?.getAnswerNumber(answer));
 	}
-	
+
 	changeVote(tx: Transaction, intentKey: string, answer: "no" | "yes" | "abstain") {
 		this.participant?.votes
 			.filter(vote => vote.intentKey === intentKey)
@@ -272,7 +271,7 @@ export class DaoClient extends AccountSDK {
 			.map(vote => vote.id)
 			.forEach(id => this.participant?.modifyVote(tx, id, this.participant?.getAnswerNumber(answer)));
 	}
-	
+
 	retrieveVotes(tx: Transaction) {
 		this.participant?.votes
 			.filter(vote => BigInt(Date.now()) > vote.voteEnd)
@@ -393,7 +392,7 @@ export class DaoClient extends AccountSDK {
 		) {
 			stage = "success";
 		}
-		
+
 		// Check if execution time reached 
 		if (
 			(stage === "success") &&
@@ -406,18 +405,6 @@ export class DaoClient extends AccountSDK {
 			stage: stage as "pending" | "active" | "failed" | "success" | "executable",
 			deletable,
 		};
-	}
-
-	// role is package_id::module_name and managedName is the name of the managed asset (vault, package, kiosk, coinType, etc)
-	constructRole(role: IntentRole, managedName: string): string {
-		if (
-			role as string !== ActionsRoles.Currency &&
-			role as string !== ActionsRoles.Kiosk &&
-			role as string !== ActionsRoles.Vault &&
-			role as string !== ActionsRoles.PackageUpgrade
-		) throw new Error("Role doesn't need a managed name");
-
-		return `${role}::${managedName}`;
 	}
 
 	getManagedAssets(): Record<string, any> {
@@ -492,11 +479,11 @@ export class DaoClient extends AccountSDK {
 	) {
 		const auth = this.authenticate(tx);
 		commands.replaceMetadata(
-			tx, 
-			DAO_CONFIG_TYPE, 
-			auth, 
-			this.dao.id, 
-			["name", "description", "image", "twitter", "telegram", "discord", "github", "website"], 
+			tx,
+			DAO_CONFIG_TYPE,
+			auth,
+			this.dao.id,
+			["name", "description", "image", "twitter", "telegram", "discord", "github", "website"],
 			[name, description, image, twitter, telegram, discord, github, website],
 		);
 	}
@@ -642,11 +629,11 @@ export class DaoClient extends AccountSDK {
 
 	// Vesting 
 
-	async getVestingsWithCaps(): Promise<{capId: string, vestingId: string, coinType: string, balance: bigint, lastClaimed: bigint, startTimestamp: bigint, endTimestamp: bigint, recipient: string}[]> {
+	async getVestingsWithCaps(): Promise<{ capId: string, vestingId: string, coinType: string, balance: bigint, lastClaimed: bigint, startTimestamp: bigint, endTimestamp: bigint, recipient: string }[]> {
 		if (!this.user.address) throw new Error("User address not found");
 		const caps = await commands.getCaps(this.client, this.user.address!);
 		const vestings = await commands.getVestings(this.client, caps.map(cap => cap.vestingId));
-		
+
 		return vestings.map(vesting => ({
 			capId: caps.find(cap => cap.vestingId === vesting.id)?.capId!,
 			vestingId: vesting.id,
@@ -988,7 +975,7 @@ export class DaoClient extends AccountSDK {
 			});
 			transfers.push({ objectId, recipient });
 		});
-		
+
 		WithdrawAndTransferIntent.prototype.request(
 			tx,
 			DAO_GENERICS,
@@ -1004,7 +991,7 @@ export class DaoClient extends AccountSDK {
 	requestWithdrawAndAirdropObjects(
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
-		drops: {objectId: string, recipient: string}[],
+		drops: { objectId: string, recipient: string }[],
 	) {
 		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
@@ -1026,7 +1013,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
 		coinType: string,
-		drops: {recipient: string, amount: bigint}[],
+		drops: { recipient: string, amount: bigint }[],
 	) {
 		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
@@ -1034,7 +1021,7 @@ export class DaoClient extends AccountSDK {
 
 		const coinIds = this.mergeAndSplit(tx, coinType, drops.map(drop => drop.amount));
 		const recipients = drops.map(drop => drop.recipient);
-		
+
 		tx.moveCall({
 			target: `${ACCOUNT_ACTIONS.V1}::owned_intents::request_withdraw_and_transfer`,
 			typeArguments: DAO_GENERICS,
@@ -1062,7 +1049,7 @@ export class DaoClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]); 
+		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]);
 		const coinId = tx.moveCall({
 			target: `${MOVE_STDLIB}::vector::swap_remove`,
 			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],

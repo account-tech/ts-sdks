@@ -1,5 +1,5 @@
 import { ACCOUNT_DAO } from "./constants";
-import { AccountData, ActionsRoles, IntentArgs, ProtocolRoles } from "@account.tech/core";
+import { AccountData, IntentArgs } from "@account.tech/core";
 
 export type DepStatus = {
     name: string;
@@ -8,15 +8,6 @@ export type DepStatus = {
     latestAddr: string;
     latestVersion: number;
 }
-
-export type IntentRole =
-    | typeof ProtocolRoles[keyof typeof ProtocolRoles]
-    | typeof ActionsRoles[keyof typeof ActionsRoles]
-    | typeof DaoRoles[keyof typeof DaoRoles];
-
-export const DaoRoles = {
-    DaoConfig: `${ACCOUNT_DAO.V1.slice(2)}::config`,
-} as const;
 
 export type IntentStatus = {
     stage: 'pending' | 'active' | 'failed' | 'success' | 'executable'; // vote not open > voting time > vote closed > executable
