@@ -2,7 +2,7 @@
   "name": "@account.tech/dao",
   "author": "Thouny <thouny@tuta.io>",
   "description": "DAO Account SDK powered by account.tech",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "license": "Apache-2.0",
   "files": [
     "dist"
@@ -18,13 +18,13 @@
     "build:types": "tsc --build"
   },
   "dependencies": {
-    "@account.tech/core": "0.1.22",
-    "@mysten/sui": "^1.30.2",
+    "@account.tech/core": "0.1.23",
+    "@mysten/sui": "^1.30.5",
     "bun-types": "^1.2.15"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^20.17.57",
+    "@types/node": "^20.19.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3"
   }

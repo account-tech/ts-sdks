@@ -20,9 +20,10 @@ import { DAO_GENERICS, DAO_CONFIG_TYPE } from "./lib/constants";
 import { Dao } from "./lib/account";
 import { Votes } from "./lib/outcome";
 import { ConfigDaoIntent } from "./lib/intents";
-import { DaoData, DaoMetadata, DepStatus, IntentStatus, VoteIntentArgs } from "./lib/types";
+import { DaoData, DaoMetadata, DepStatus, IntentRole, IntentStatus, VoteIntentArgs } from "./lib/types";
 import { Participant } from "./lib/user";
 import { Registry } from "./lib/registry";
+import { ActionsRoles } from "@account.tech/core";
 
 export class DaoClient extends AccountSDK {
 	registry?: Registry
@@ -407,6 +408,18 @@ export class DaoClient extends AccountSDK {
 		};
 	}
 
+	// role is package_id::module_name and managedName is the name of the managed asset (vault, package, kiosk, coinType, etc)
+	constructRole(role: IntentRole, managedName: string): string {
+		if (
+			role as string !== ActionsRoles.Currency &&
+			role as string !== ActionsRoles.Kiosk &&
+			role as string !== ActionsRoles.Vault &&
+			role as string !== ActionsRoles.PackageUpgrade
+		) throw new Error("Role doesn't need a managed name");
+
+		return `${role}::${managedName}`;
+	}
+
 	getManagedAssets(): Record<string, any> {
 		return this.managedAssets?.assets ?? {};
 	}
@@ -601,30 +614,30 @@ export class DaoClient extends AccountSDK {
 	/// Opens a Treasury in the Account
 	openVault(
 		tx: Transaction,
-		treasuryName: string,
+		vaultName: string,
 	) {
 		const auth = this.authenticate(tx);
-		commands.openVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
+		commands.openVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, vaultName);
 	}
 
 	/// Deposits an object into the Treasury from the caller wallet
 	depositFromWallet(
 		tx: Transaction,
 		coinType: string,
-		treasuryName: string,
+		vaultName: string,
 		coin: TransactionObjectInput,
 	) {
 		const auth = this.authenticate(tx);
-		commands.depositFromWallet(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryName, coin);
+		commands.depositFromWallet(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, vaultName, coin);
 	}
 
 	/// Closes an empty Treasury managed by the Account
 	closeVault(
 		tx: Transaction,
-		treasuryName: string,
+		vaultName: string,
 	) {
 		const auth = this.authenticate(tx);
-		commands.closeVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, treasuryName);
+		commands.closeVault(tx, DAO_CONFIG_TYPE, auth, this.dao.id, vaultName);
 	}
 
 	// Vesting 
@@ -1112,7 +1125,7 @@ export class DaoClient extends AccountSDK {
 	requestSpendAndTransfer(
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
-		treasuryName: string,
+		vaultName: string,
 		coinType: string,
 		transfers: { amount: bigint, recipient: string }[],
 	) {
@@ -1127,14 +1140,14 @@ export class DaoClient extends AccountSDK {
 			this.dao.id,
 			params,
 			outcome,
-			{ treasuryName, coinType, transfers },
+			{ vaultName, coinType, transfers },
 		);
 	}
 
 	requestSpendAndVest(
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
-		treasuryName: string,
+		vaultName: string,
 		coinType: string,
 		amount: bigint,
 		start: bigint,
@@ -1152,7 +1165,7 @@ export class DaoClient extends AccountSDK {
 			this.dao.id,
 			params,
 			outcome,
-			{ treasuryName, coinType, amount, start, end, recipient },
+			{ vaultName, coinType, amount, start, end, recipient },
 		);
 	}
 
