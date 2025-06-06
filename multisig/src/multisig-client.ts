@@ -2,7 +2,7 @@ import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/
 import { SuiObjectResponse, SuiMoveObject } from "@mysten/sui/client";
 import {
 	Intent, OwnedData, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes, Policy,
+	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes, Policy, ProtocolRoles, ActionsRoles,
 } from "@account.tech/core";
 import {
 	BorrowCapIntent,
@@ -18,11 +18,10 @@ import * as commands from "@account.tech/core/dist/lib/commands";
 import { AccountSDK } from "@account.tech/core/dist/sdk";
 
 import { MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./lib/constants"; 
-import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes, IntentRole } from "./lib/types";
+import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes, IntentRole, MultisigRoles } from "./lib/types";
 import { Multisig } from "./lib/account";
 import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
-import { ActionsRoles } from "@account.tech/core";
 
 export class MultisigClient extends AccountSDK {
 	previews: { id: string, name: string }[] = [];
@@ -406,6 +405,7 @@ export class MultisigClient extends AccountSDK {
 	// role is package_id::module_name and managedName is the name of the managed asset (vault, package, kiosk, coinType, etc)
 	constructRole(role: IntentRole, managedName: string): string {
 		if (
+			role as string !== ActionsRoles.AccessControl &&
 			role as string !== ActionsRoles.Currency &&
 			role as string !== ActionsRoles.Kiosk &&
 			role as string !== ActionsRoles.Vault &&
@@ -413,6 +413,40 @@ export class MultisigClient extends AccountSDK {
 		) throw new Error("Role doesn't need a managed name");
 
 		return `${role}::${managedName}`;
+	}
+
+	getConfigurableRoles(): string[] {
+		let roles: string[] = [
+			...Object.values(ProtocolRoles),
+			...Object.values(ActionsRoles),
+			...Object.values(MultisigRoles)
+		];
+
+		roles = roles.filter(role =>
+			role !== ActionsRoles.AccessControl &&
+			role !== ActionsRoles.Currency &&
+			role !== ActionsRoles.Kiosk &&
+			role !== ActionsRoles.Vault &&
+			role !== ActionsRoles.PackageUpgrade
+		);
+
+		Object.keys(this.getCaps().assets).forEach(capType => {
+			roles.push(this.constructRole(ActionsRoles.AccessControl, capType));
+		});
+		Object.keys(this.getCurrencies().assets).forEach(coinType => {
+			roles.push(this.constructRole(ActionsRoles.Currency, coinType));
+		});
+		Object.keys(this.getKiosks().assets).forEach(kioskName => {
+			roles.push(this.constructRole(ActionsRoles.Kiosk, kioskName));
+		});
+		Object.keys(this.getVaults().assets).forEach(vaultName => {
+			roles.push(this.constructRole(ActionsRoles.Vault, vaultName));
+		});
+		Object.keys(this.getPackages().assets).forEach(packageName => {
+			roles.push(this.constructRole(ActionsRoles.PackageUpgrade, packageName));
+		});
+
+		return roles;
 	}
 
 	getManagedAssets(): Record<string, any> {
