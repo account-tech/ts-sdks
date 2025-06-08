@@ -108,7 +108,7 @@ export class MultisigClient extends AccountSDK {
 	}
 
 	async switchMultisig(multisigId: string) {
-		await this.account.refresh(multisigId);
+		await this.switch(multisigId);
 	}
 
 	/// Creates a multisig with default weights of 1 (1 member = 1 voice)
