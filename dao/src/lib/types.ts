@@ -1,5 +1,6 @@
 import { ACCOUNT_DAO } from "./constants";
-import { AccountData, IntentArgs } from "@account.tech/core";
+import { AccountData } from "@account.tech/core/lib/account";
+import { IntentArgs } from "@account.tech/core/lib/intents";
 
 export type DepStatus = {
     name: string;

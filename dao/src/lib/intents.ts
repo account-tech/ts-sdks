@@ -2,8 +2,8 @@ import { Transaction, TransactionResult, TransactionObjectInput } from "@mysten/
 import * as accountProtocol from "../.gen/account-protocol/account/functions";
 import * as intents from "../.gen/account-protocol/intents/functions";
 
+import { Intent } from "@account.tech/core/lib/intents";
 import { ConfigDaoArgs, DaoIntentTypes } from "./types";
-import { Intent, CLOCK } from "@account.tech/core";
 import { ACCOUNT_DAO } from "./constants";
 
 export class ConfigDaoIntent extends Intent {
@@ -105,7 +105,7 @@ export class ConfigDaoIntent extends Intent {
             {
                 account: this.account,
                 key,
-                clock: CLOCK,
+                clock: tx.object.clock,
             }
         );
         tx.moveCall({

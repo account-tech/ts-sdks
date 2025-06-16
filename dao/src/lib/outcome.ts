@@ -1,4 +1,4 @@
-import { Outcome } from "@account.tech/core";
+import { Outcome } from "@account.tech/core/lib/intents";
 import { ACCOUNT_DAO } from "./constants";
 
 export class Votes implements Outcome {

@@ -1,7 +1,8 @@
 import { Transaction, TransactionObjectArgument, TransactionResult } from "@mysten/sui/transactions";
 import { normalizeStructTag } from "@mysten/sui/utils";
 
-import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
+import { Account, Dep } from "@account.tech/core/lib/account";
+import { ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core/types";
 import { DAO_GENERICS, DAO_CONFIG_TYPE, ACCOUNT_DAO, DAO_REGISTRY } from "./constants";
 import { DaoData } from "./types";
 

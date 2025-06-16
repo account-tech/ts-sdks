@@ -1,9 +1,5 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import {
-	Intent, OwnedData, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	ActionsArgs, Profile, ActionsIntentTypes, Policy,
-} from "@account.tech/core";
-import {
 	BorrowCapIntent, EmptyIntent,
 	UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 	TakeNftsIntent, ListNftsIntent,
@@ -11,10 +7,14 @@ import {
 	WithdrawAndTransferToVaultIntent, WithdrawAndTransferIntent, WithdrawAndVestIntent,
 	SpendAndTransferIntent, SpendAndVestIntent,
 	ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
-} from "@account.tech/core/dist/lib/intents";
-import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/dist/types";
-import * as commands from "@account.tech/core/dist/lib/commands";
-import { AccountSDK } from "@account.tech/core/dist/sdk";
+	Intent, ActionsArgs, ActionsIntentTypes, Policy
+} from "@account.tech/core/lib/intents";
+import { OwnedData, Currencies, Kiosks, Vaults, Packages, Caps } from "@account.tech/core/lib/objects";
+import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/types";
+import * as commands from "@account.tech/core/lib/commands";
+import { AccountSDK } from "@account.tech/core/sdk";
+import { Profile } from "@account.tech/core/lib/user";
+import { Dep } from "@account.tech/core/lib/account";
 
 import { DAO_GENERICS, DAO_CONFIG_TYPE } from "./lib/constants";
 import { Dao } from "./lib/account";
