@@ -1,10 +1,6 @@
 import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
 import { SuiObjectResponse, SuiMoveObject } from "@mysten/sui/client";
 import {
-	Intent, OwnedData, Currencies, Kiosks, Vaults, Packages, Caps, Dep,
-	IntentStatus, ActionsArgs, IntentArgs, Invite, Profile, ActionsIntentTypes, Policy, ProtocolRoles, ActionsRoles,
-} from "@account.tech/core";
-import {
 	BorrowCapIntent,
 	UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 	TakeNftsIntent, ListNftsIntent,
@@ -12,10 +8,14 @@ import {
 	WithdrawAndTransferToVaultIntent, WithdrawAndTransferIntent, WithdrawAndVestIntent,
 	SpendAndTransferIntent, SpendAndVestIntent,
 	ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
-} from "@account.tech/core/dist/lib/intents";
-import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/dist/types";
-import * as commands from "@account.tech/core/dist/lib/commands";
-import { AccountSDK } from "@account.tech/core/dist/sdk";
+	Intent, IntentStatus, ActionsArgs, IntentArgs, ActionsIntentTypes, Policy, ProtocolRoles, ActionsRoles,
+} from "@account.tech/core/lib/intents";
+import { OwnedData, Currencies, Kiosks, Vaults, Packages, Caps } from "@account.tech/core/lib/objects";
+import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/types";
+import * as commands from "@account.tech/core/lib/commands";
+import { AccountSDK } from "@account.tech/core/sdk";
+import { Invite, Profile } from "@account.tech/core/lib/user";
+import { Dep } from "@account.tech/core/lib/account";
 
 import { MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./lib/constants"; 
 import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes, IntentRole, MultisigRoles } from "./lib/types";

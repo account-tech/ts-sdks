@@ -5,7 +5,7 @@ import * as intents from "../.gen/account-protocol/intents/functions";
 import { ConfigMultisigAction } from "../.gen/account-multisig/config/structs";
 
 import { ConfigMultisigArgs, MultisigIntentTypes } from "./types";
-import { Intent, CLOCK } from "@account.tech/core";
+import { Intent } from "@account.tech/core/lib/intents";
 
 export class ConfigMultisigIntent extends Intent {
     static type = MultisigIntentTypes.ConfigMultisig;
@@ -127,7 +127,7 @@ export class ConfigMultisigIntent extends Intent {
             {
                 account: this.account,
                 key,
-                clock: CLOCK,
+                clock: tx.object.clock,
             }
         );
         config.deleteConfigMultisig(

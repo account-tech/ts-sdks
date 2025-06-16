@@ -11,7 +11,10 @@ import { DepFields } from "../.gen/account-protocol/deps/structs";
 import { MemberFields, RoleFields } from "../.gen/account-multisig/multisig/structs";
 import { Fees as FeesRaw } from "../.gen/account-multisig/fees/structs";
 
-import { User, Account, Intent, Dep, ConfigDepsArgs, ACCOUNT_PROTOCOL, CLOCK, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
+import { Account, Dep } from "@account.tech/core/lib/account";
+import { ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core/types";
+import { Intent, ConfigDepsArgs } from "@account.tech/core/lib/intents";
+import { User } from "@account.tech/core/lib/user";
 import { Role, MemberProfile, MultisigData, ConfigMultisigArgs } from "./types";
 import { MULTISIG_FEES, MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./constants";
 
@@ -245,7 +248,7 @@ export class Multisig extends Account implements MultisigData {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return executeIntent(tx, { account, key, clock: CLOCK });
+        return executeIntent(tx, { account, key, clock: tx.object.clock });
     }
 
     // === Atomic Intents ===

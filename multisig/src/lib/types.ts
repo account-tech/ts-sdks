@@ -1,5 +1,7 @@
 import { ACCOUNT_MULTISIG } from "./constants";
-import { AccountData, ActionsRoles, Profile, ProtocolRoles } from "@account.tech/core";
+import { ActionsRoles, ProtocolRoles } from "@account.tech/core/lib/intents";
+import { AccountData } from "@account.tech/core/lib/account";
+import { Profile } from "@account.tech/core/lib/user";
 
 export type DepStatus = {
     name: string;

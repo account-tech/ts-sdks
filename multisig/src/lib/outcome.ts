@@ -2,7 +2,7 @@ import { Transaction, TransactionResult } from "@mysten/sui/transactions";
 import { approveIntent, disapproveIntent, executeIntent } from "../.gen/account-multisig/multisig/functions";
 import { Approvals as ApprovalsRaw } from "../.gen/account-multisig/multisig/structs";
 
-import { Outcome, CLOCK } from "@account.tech/core";
+import { Outcome } from "@account.tech/core/lib/intents";
 import { ACCOUNT_MULTISIG } from "./constants";
 
 export class Approvals implements Outcome {
@@ -43,6 +43,6 @@ export class Approvals implements Outcome {
     }
 
     execute(tx: Transaction): TransactionResult {
-        return executeIntent(tx, { account: this.multisig, key: this.key, clock: CLOCK });
+        return executeIntent(tx, { account: this.multisig, key: this.key, clock: tx.object.clock });
     }
 }
