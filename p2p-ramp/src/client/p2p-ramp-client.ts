@@ -9,7 +9,7 @@ import { ConfigP2PRampIntent, FillBuyIntent, FillSellIntent } from "../lib/inten
 import { DepStatus } from "../lib/types";
 import { Orders } from "../lib/dynamic-fields";
 import { createOrder, destroyOrder } from "../lib/commands";
-import { Registry } from "../lib/registry";
+import { AccountRegistry } from "../lib/account-registry.ts";
 import {ACCOUNT_PROTOCOL, SUI_FRAMEWORK, TransactionPureInput} from "@account.tech/core/types";
 import {Intent, IntentArgs} from "@account.tech/core/lib/intents";
 import {Profile} from "@account.tech/core/lib/user";
@@ -18,7 +18,7 @@ import {AccountSDK} from "@account.tech/core/sdk";
 import * as commands from "@account.tech/core/lib/commands";
 
 export class P2PRampClient extends AccountSDK {
-	registry?: Registry;
+	registry?: AccountRegistry;
 	previews: { name: string, id: string }[] = [];
 
 	get p2pramp() {
@@ -49,7 +49,7 @@ export class P2PRampClient extends AccountSDK {
 
 		(p2prampClient as P2PRampClient).previews = await (p2prampClient as P2PRampClient).fetchAccountPreviews();
 
-		(p2prampClient as P2PRampClient).registry = await Registry.init(p2prampClient.client);
+		(p2prampClient as P2PRampClient).registry = await AccountRegistry.init(p2prampClient.client);
 
 		return p2prampClient as P2PRampClient;
 	}
@@ -334,12 +334,10 @@ export class P2PRampClient extends AccountSDK {
 
 	requestFillBuy(
 		tx: Transaction,
-		intentArgs: IntentArgs,
 		orderId: string,
 		coinType: string,
 		coinAmount: bigint,
 	) {
-		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.p2pramp.requestedHandshakeOutcome(
 			tx,
 			this.p2pramp.members[0], // fiat sender
@@ -351,7 +349,6 @@ export class P2PRampClient extends AccountSDK {
 			null,
 			null,
 			this.p2pramp.id,
-			params,
 			outcome,
 			{ orderId, coinType, coinAmount },
 		);
@@ -359,12 +356,10 @@ export class P2PRampClient extends AccountSDK {
 
 	requestFillSell(
 		tx: Transaction,
-		intentArgs: IntentArgs,
 		orderId: string,
 		coinType: string,
 		fiatAmount: bigint,
 	) {
-		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.p2pramp.requestedHandshakeOutcome(
 			tx,
 			this.user.address!, // fiat sender
@@ -376,7 +371,6 @@ export class P2PRampClient extends AccountSDK {
 			null,
 			null,
 			this.p2pramp.id,
-			params,
 			outcome,
 			{ orderId, coinType, fiatAmount },
 		);

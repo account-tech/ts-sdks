@@ -96,7 +96,7 @@ export function isTransactionArgument(arg: GenericArg): arg is TransactionArgume
   return 'GasCoin' in arg || 'Input' in arg || 'Result' in arg || 'NestedResult' in arg
 }
 
-export function obj(tx: Transaction, arg: TransactionObjectInput | TransactionArgument) {
+export function obj(tx: Transaction, arg: TransactionObjectInput) {
   return isTransactionArgument(arg) ? arg : tx.object(arg)
 }
 

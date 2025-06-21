@@ -1,6 +1,6 @@
 import { SUI_FRAMEWORK } from "@account.tech/core/types";
 import { coinWithBalance, Transaction, TransactionArgument } from "@mysten/sui/transactions";
-import { FEES, P2P_RAMP } from "./constants";
+import {POLICY, P2P_RAMP, ORDER_REGISTRY} from "./constants";
 
 /// Deposits and locks a Cap object in the Account
 export function createOrder(
@@ -37,8 +37,9 @@ export function createOrder(
         target: `${P2P_RAMP.V1}::orders::create_order`,
         typeArguments: [coinType],
         arguments: [
+            tx.object(ORDER_REGISTRY),
             auth,
-            tx.object(FEES),
+            tx.object(POLICY),
             typeof account === "string" ? tx.object(account) : account,
             tx.pure.bool(isBuy),
             tx.pure.u64(fiatAmount),
@@ -62,6 +63,7 @@ export function destroyOrder(
         target: `${P2P_RAMP.V1}::orders::destroy_order`,
         typeArguments: [coinType],
         arguments: [
+            tx.object(ORDER_REGISTRY),
             auth,
             typeof account === "string" ? tx.object(account) : account,
             tx.pure.address(orderId),

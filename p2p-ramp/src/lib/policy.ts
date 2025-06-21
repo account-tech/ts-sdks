@@ -1,7 +1,7 @@
 import {SuiClient} from "@mysten/sui/client";
-import {FEES} from "./constants.ts";
+import {POLICY} from "./constants.ts";
 
-export class Fees {
+export class Policy {
 
     data: { allowedCoins: string[], allowedFiat: string[] } = {
         allowedCoins: [],
@@ -13,15 +13,15 @@ export class Fees {
     ) {
     }
 
-    static async init(client: SuiClient): Promise<Fees> {
-        const fees = new Fees(client);
+    static async init(client: SuiClient): Promise<Policy> {
+        const fees = new Policy(client);
         await fees.refresh();
         return fees;
     }
 
     async fetch(): Promise<{ allowedCoins: string[], allowedFiat: string[] }> {
         const fees = await this.client.getObject({
-            id: FEES,
+            id: POLICY,
             options: {
                 showContent: true
             }

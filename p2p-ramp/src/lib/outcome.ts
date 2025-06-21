@@ -2,6 +2,7 @@ import { Transaction, TransactionArgument } from "@mysten/sui/transactions";
 import { P2P_RAMP } from "./constants";
 import { HandshakeStatus } from "./types";
 import {Outcome} from "@account.tech/core/lib/intents";
+import {CLOCK} from "@account.tech/core/types";
 
 export class Approved implements Outcome {
     static type = `${P2P_RAMP.V1}::p2p_ramp::Approved`;
@@ -42,6 +43,7 @@ export class Handshake implements Outcome {
             arguments: [
                 typeof account === "string" ? tx.object(account) : account,
                 tx.pure.string(key),
+                tx.object(CLOCK),
             ]
         });
     }
@@ -59,6 +61,7 @@ export class Handshake implements Outcome {
             arguments: [
                 typeof account === "string" ? tx.object(account) : account,
                 tx.pure.string(key),
+                tx.object(CLOCK),
             ]
         });
     }

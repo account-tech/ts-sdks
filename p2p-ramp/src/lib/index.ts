@@ -4,5 +4,5 @@ export * from "./intents";
 export * from "./account";
 export * from "./types";
 export * from "./commands";
-export * from "./registry"
-export * from "./fees"
+export * from "./account-registry.ts"
+export * from "./policy.ts"

@@ -53,4 +53,5 @@ export type Order = {
     coinAmount: bigint;
     coinBalance: any;
     pendingFill: bigint;
+    completed_fill: bigint;
 }

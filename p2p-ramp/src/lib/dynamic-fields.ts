@@ -35,6 +35,7 @@ export class Orders extends Asset {
                 coinAmount: fields.coin_amount,
                 coinBalance: fields.coin_balance,
                 pendingFill: fields.pending_fill,
+                completed_fill: fields.completed_fill,
             };
             return acc;
         }, {} as Record<string, Order>);
