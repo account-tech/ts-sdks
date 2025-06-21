@@ -1,6 +1,6 @@
 import { Order } from "./types";
-import { Asset } from "@account.tech/core";
 import { P2P_RAMP } from "./constants";
+import {Asset} from "@account.tech/core/lib/objects";
 
 export class Orders extends Asset {
     override type = "orders";
@@ -35,6 +35,7 @@ export class Orders extends Asset {
                 coinAmount: fields.coin_amount,
                 coinBalance: fields.coin_balance,
                 pendingFill: fields.pending_fill,
+                completed_fill: fields.completed_fill,
             };
             return acc;
         }, {} as Record<string, Order>);

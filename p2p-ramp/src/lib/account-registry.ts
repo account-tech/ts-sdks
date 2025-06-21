@@ -1,15 +1,15 @@
 import { SuiClient } from "@mysten/sui/client";
-import { REGISTRY_TABLE_ID } from "./constants";
+import { ACCOUNT_REGISTRY_TABLE_ID } from "./constants";
 
-export class Registry {
+export class AccountRegistry {
     accounts: { id: string, name: string }[] = [];
 
     private constructor(
         public client: SuiClient,
     ) {}
 
-    static async init(client: SuiClient): Promise<Registry> {
-        const registry = new Registry(client);
+    static async init(client: SuiClient): Promise<AccountRegistry> {
+        const registry = new AccountRegistry(client);
         await registry.refresh();
 
         return registry;
@@ -18,7 +18,7 @@ export class Registry {
     // get and format extensions data
     async fetch(): Promise<{ id: string, name: string }[]> {
         const registry = await this.client.getDynamicFields({ 
-            parentId: REGISTRY_TABLE_ID
+            parentId: ACCOUNT_REGISTRY_TABLE_ID
         });
 
         const ids = registry.data.map(d => d.name.value as string);

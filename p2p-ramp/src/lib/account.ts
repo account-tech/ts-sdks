@@ -1,8 +1,9 @@
 import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
 
-import { Account, Dep, ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core";
-import { P2P_RAMP_CONFIG_TYPE, P2P_RAMP, FEES, REGISTRY } from "./constants";
+import { P2P_RAMP_CONFIG_TYPE, P2P_RAMP, POLICY, ACCOUNT_REGISTRY } from "./constants";
 import { P2PRampData } from "./types";
+import { ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core/types";
+import { Account, Dep } from "@account.tech/core/lib/account";
 
 export class P2PRamp extends Account implements P2PRampData {
     static type = P2P_RAMP_CONFIG_TYPE;
@@ -49,7 +50,7 @@ export class P2PRamp extends Account implements P2PRampData {
 
     async fetchFees(): Promise<any> {
         const fees = await this.client.getObject({
-            id: FEES,
+            id: POLICY,
             options: { showContent: true },
         });
 
@@ -94,7 +95,7 @@ export class P2PRamp extends Account implements P2PRampData {
         return tx.moveCall({
             target: `${P2P_RAMP.V1}::p2p_ramp::new_account`,
             arguments: [
-                tx.object(REGISTRY),
+                tx.object(ACCOUNT_REGISTRY),
                 tx.object(EXTENSIONS),
             ],
         });

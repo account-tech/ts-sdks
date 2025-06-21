@@ -1,5 +1,5 @@
 import { P2P_RAMP } from "./constants";
-import { AccountData } from "@account.tech/core";
+import { AccountData } from "@account.tech/core/lib/account";
 
 export type DepStatus = {
     name: string;
@@ -53,4 +53,5 @@ export type Order = {
     coinAmount: bigint;
     coinBalance: any;
     pendingFill: bigint;
+    completed_fill: bigint;
 }
