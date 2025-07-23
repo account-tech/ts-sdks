@@ -868,7 +868,12 @@ export class DaoClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		const coinId = this.mergeAndSplit(tx, coinType, [amount]);
+		const coinIds = this.mergeAndSplit(tx, coinType, [amount]);
+		const coinId = tx.moveCall({
+			target: `${MOVE_STDLIB}::vector::swap_remove`,
+			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
+			arguments: [coinIds, tx.pure.u64(0)],
+		});
 
 		WithdrawAndBurnIntent.prototype.request(
 			tx,
