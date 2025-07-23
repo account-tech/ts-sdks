@@ -1,5 +1,5 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { P2PRampClient } from "../../src/p2p-ramp-client";
+import { P2PRampClient } from "../../src/client/p2p-ramp-client";
 import { executeTx, NETWORK, testKeypair } from "./utils";
 
 (async () => {

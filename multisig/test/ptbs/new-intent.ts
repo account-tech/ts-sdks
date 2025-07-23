@@ -1,8 +1,6 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { MultisigClient } from "../../src/multisig-client";
 import { NETWORK, MULTISIG, testKeypair, executeTx } from "./utils";
-import { ACCOUNT_ACTIONS, ACCOUNT_PROTOCOL, ActionsRoles } from "@account.tech/core";
-import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
 
 (async () => {
     const ms = await MultisigClient.init(
@@ -12,12 +10,14 @@ import { ACCOUNT_MULTISIG } from "../../src/lib/constants";
     );
     const tx = new Transaction();
 
-    ms.requestSpendAndTransfer (
+    // const coin = tx.splitCoins(tx.gas, [5n]);
+    // tx.transferObjects([coin], "0xfdad7ba77f88e7d082787cb8a3d517bc58b533bee5950024ae4c7a5799a8979f");
+
+    ms.requestWithdrawAndBurn (
         tx,
         {key: "spend" },
-        "Investment",
         "0x2::sui::SUI",
-        [{ amount: 5n, recipient: "0x3c00d56434d581fdfd6e280626f7c8ee75cc9dac134d84290491e65f9b8b7161"}]
+        5n
     );
     
     executeTx(tx);
