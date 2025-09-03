@@ -143,7 +143,7 @@ export class MultisigClient extends AccountSDK {
 		// update multisig rules if members are provided
 		if (memberAddresses) {
 			const members = memberAddresses.map((address: string) => ({ address, weight: 1, roles: [] }));
-			members.push({ address: this.user.address!, weight: 1, roles: [] }); // add creator to the members
+			!memberAddresses.includes(this.user.address!) && members.push({ address: this.user.address!, weight: 1, roles: [] }); // add creator to the members
 
 			this.multisig.atomicConfigMultisig(
 				tx,
@@ -651,6 +651,35 @@ export class MultisigClient extends AccountSDK {
 	) {
 		const auth = this.multisig.authenticate(tx);
 		commands.closeVault(tx, MULTISIG_CONFIG_TYPE, auth, this.multisig.id, vaultName);
+	}
+
+	// Vesting 
+
+	async getVestingsWithCaps(): Promise<{ capId: string, vestingId: string, coinType: string, balance: bigint, lastClaimed: bigint, startTimestamp: bigint, endTimestamp: bigint, recipient: string }[]> {
+		if (!this.user.address) throw new Error("User address not found");
+		const caps = await commands.getCaps(this.client, this.user.address!);
+		const vestings = await commands.getVestings(this.client, caps.map(cap => cap.vestingId));
+
+		return vestings.map(vesting => ({
+			capId: caps.find(cap => cap.vestingId === vesting.id)?.capId!,
+			vestingId: vesting.id,
+			coinType: vesting.coinType,
+			balance: vesting.balance,
+			lastClaimed: vesting.lastClaimed,
+			startTimestamp: vesting.startTimestamp,
+			endTimestamp: vesting.endTimestamp,
+			recipient: vesting.recipient,
+		}));
+	}
+
+	// provide endTimestamp to automatically delete the vesting and cap objects if empty after claiming
+	claimVested(tx: Transaction, coinType: string, vestingId: string, capId: string, endTimestamp?: bigint) {
+		commands.claim(tx, coinType, vestingId, capId);
+
+		if (endTimestamp && Date.now() > endTimestamp) {
+			commands.destroyEmpty(tx, coinType, vestingId);
+			commands.destroyCap(tx, capId);
+		}
 	}
 
 	// === Intents ===
