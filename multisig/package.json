@@ -2,7 +2,7 @@
   "name": "@account.tech/multisig",
   "author": "Thouny <thouny@tuta.io>",
   "description": "Multisig Account SDK powered by account.tech",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "license": "Apache-2.0",
   "files": [
     "dist"
