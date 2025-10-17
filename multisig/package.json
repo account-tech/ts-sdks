@@ -15,17 +15,19 @@
     "clean": "rm -rf tsconfig.tsbuildinfo ./dist",
     "build": "rm -rf dist/ && rm -rf tsconfig.tsbuildinfo && bun build:tsup && bun build:types",
     "build:tsup": "tsup ./src/* --format esm,cjs --sourcemap",
-    "build:types": "tsc --build"
+    "build:types": "tsc --build",
+    "codegen": "sui-ts-codegen generate"
   },
   "dependencies": {
     "@account.tech/core": "0.1.26",
-    "@mysten/sui": "^1.30.5",
-    "bun-types": "^1.2.15"
+    "@mysten/codegen": "^0.5.5",
+    "@mysten/sui": "^1.42.0",
+    "bun-types": "^1.3.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^20.19.0",
+    "@types/node": "^20.19.22",
     "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }

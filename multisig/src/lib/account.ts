@@ -1,5 +1,5 @@
 import { Transaction, TransactionArgument, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
-import { Account as AccountRaw } from "../.gen/account-protocol/account/structs";
+import { Account as AccountRaw } from "../packages/account_protocol/account/structs";
 import { destroyEmptyIntent, confirmExecution } from "../.gen/account-protocol/account/functions";
 import { Multisig as MultisigRaw } from "../.gen/account-multisig/multisig/structs";
 import { newAccount } from "../.gen/account-multisig/multisig/functions";
