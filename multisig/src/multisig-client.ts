@@ -120,8 +120,13 @@ export class MultisigClient extends AccountSDK {
 		memberAddresses?: string[],
 		globalThreshold?: number,
 	) {
-		if (memberAddresses && globalThreshold && (memberAddresses.length - 1) < globalThreshold) {
-			throw new Error("Global threshold must be smaller than the number of members");
+		if (globalThreshold !== undefined) {
+			if (globalThreshold < 1) {
+				throw new Error("Global threshold must be at least 1");
+			}
+			if (memberAddresses && memberAddresses.length > 0 && globalThreshold > memberAddresses.length) {
+				throw new Error(`Global threshold must not exceed ${memberAddresses.length} (total number of members)`);
+			}
 		}
 		// create the user if the user doesn't have one
 		let userId: RawTransactionArgument<string> = this.user.id;
