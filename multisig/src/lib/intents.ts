@@ -1,8 +1,7 @@
-import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
-import * as config from "../.gen/account-multisig/config/functions";
-import * as accountProtocol from "../.gen/account-protocol/account/functions";
-import * as intents from "../.gen/account-protocol/intents/functions";
-import { ConfigMultisigAction } from "../.gen/account-multisig/config/structs";
+import { Transaction, TransactionArgument } from "@mysten/sui/transactions";
+import * as config from "../packages/account_multisig/config";
+import * as accountProtocol from "../packages/account_protocol/account";
+import * as intents from "../packages/account_protocol/intents";
 
 import { ConfigMultisigArgs, MultisigIntentTypes } from "./types";
 import { Intent } from "@account.tech/core/lib/intents";
@@ -13,7 +12,7 @@ export class ConfigMultisigIntent extends Intent {
 
     async init() {
         const actions = await this.fetchActions(this.fields.actionsId);
-        const configMultisigAction = ConfigMultisigAction.fromFieldsWithTypes(actions[0]);
+        const configMultisigAction = config.ConfigMultisigAction.fromBase64(actions[0]);
 
         this.args = {
             members: configMultisigAction.config.members.map((member) => ({
@@ -34,12 +33,12 @@ export class ConfigMultisigIntent extends Intent {
     request(
         tx: Transaction,
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
-        auth: TransactionObjectInput,
+        auth: TransactionArgument,
         account: string,
-        params: TransactionObjectInput,
-        outcome: TransactionObjectInput,
+        params: TransactionArgument,
+        outcome: TransactionArgument,
         actionArgs: ConfigMultisigArgs,
-    ): TransactionResult {
+    ) {
         let addresses: string[] = [];
         let weights: bigint[] = [];
         let roles: string[][] = [];
@@ -62,34 +61,36 @@ export class ConfigMultisigIntent extends Intent {
             });
         }
 
-        return config.requestConfigMultisig(
-            tx,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-                addresses,
-                weights,
-                roles,
-                global,
-                roleNames,
-                roleThresholds,
-            }
+        tx.add(
+            config.requestConfigMultisig({
+                arguments: {
+                    auth,
+                    account,
+                    params,
+                    outcome,
+                    addresses,
+                    weights,
+                    roles,
+                    global,
+                    roleNames,
+                    roleThresholds,
+                }
+            })
         );
     }
 
     execute(
         tx: Transaction,
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
-        executable: TransactionObjectInput,
-    ): TransactionResult {
-        return config.executeConfigMultisig(
-            tx,
-            {
-                executable,
-                account: this.account,
-            }
+        executable: TransactionArgument,
+    ) {
+        return tx.add(
+            config.executeConfigMultisig({
+                arguments: {
+                    executable,
+                    account: this.account,
+                }
+            })
         );
     }
 
@@ -97,22 +98,25 @@ export class ConfigMultisigIntent extends Intent {
         tx: Transaction,
         accountGenerics: [string, string],
         key: string,
-    ): TransactionResult {
-        const expired = accountProtocol.destroyEmptyIntent(
-            tx,
-            accountGenerics,
-            {
-                account: this.account,
-                key,
-            }
+    ) {
+        const expired = tx.add(
+            accountProtocol.destroyEmptyIntent({
+                typeArguments: accountGenerics,
+                arguments: {
+                    account: this.account,
+                    key,
+                }
+            })
         );
-        config.deleteConfigMultisig(
-            tx,
-            expired
+        tx.add(
+            config.deleteConfigMultisig({
+                arguments: { expired }
+            })
         );
-        return intents.destroyEmptyExpired(
-            tx,
-            expired,
+        tx.add(
+            intents.destroyEmptyExpired({
+                arguments: { expired }
+            })
         );
     }
 
@@ -120,23 +124,25 @@ export class ConfigMultisigIntent extends Intent {
         tx: Transaction,
         accountGenerics: [string, string],
         key: string,
-    ): TransactionResult {
-        const expired = accountProtocol.deleteExpiredIntent(
-            tx,
-            accountGenerics,
-            {
-                account: this.account,
-                key,
-                clock: tx.object.clock,
-            }
+    ) {
+        const expired = tx.add(
+            accountProtocol.deleteExpiredIntent({
+                typeArguments: accountGenerics,
+                arguments: {
+                    account: this.account,
+                    key,
+                }
+            })
         );
-        config.deleteConfigMultisig(
-            tx,
-            expired
+        tx.add(
+            config.deleteConfigMultisig({
+                arguments: { expired }
+            })
         );
-        return intents.destroyEmptyExpired(
-            tx,
-            expired,
+        tx.add(
+            intents.destroyEmptyExpired({
+                arguments: { expired }
+            })
         );
     }
 }

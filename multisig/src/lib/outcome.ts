@@ -1,6 +1,5 @@
-import { Transaction, TransactionResult } from "@mysten/sui/transactions";
-import { approveIntent, disapproveIntent, executeIntent } from "../.gen/account-multisig/multisig/functions";
-import { Approvals as ApprovalsRaw } from "../.gen/account-multisig/multisig/structs";
+import { Transaction } from "@mysten/sui/transactions";
+import { approveIntent, disapproveIntent, executeIntent, Approvals as ApprovalsRaw } from "../packages/account_multisig/multisig";
 
 import { Outcome } from "@account.tech/core/lib/intents";
 import { ACCOUNT_MULTISIG } from "./constants";
@@ -16,11 +15,11 @@ export class Approvals implements Outcome {
     approved: string[];
 
     constructor(multisigId: string, key: string, fields: any) {
-        let approvals = ApprovalsRaw.fromFieldsWithTypes(fields);
+        let approvals = ApprovalsRaw.fromBase64(fields);
         this.multisig = multisigId;
         this.key = key;
-        this.totalWeight = Number(approvals.totalWeight);
-        this.roleWeight = Number(approvals.roleWeight);
+        this.totalWeight = Number(approvals.total_weight);
+        this.roleWeight = Number(approvals.role_weight);
         this.approved = approvals.approved.contents;
     }
 
@@ -28,8 +27,10 @@ export class Approvals implements Outcome {
         return this.approved!.includes(addr);
     }
 
-    approve(tx: Transaction): TransactionResult {
-        return approveIntent(tx, { account: this.multisig, key: this.key });
+    approve(tx: Transaction) {
+        tx.add(
+            approveIntent({ arguments: { account: this.multisig, key: this.key } })
+        );
     }
 
     maybeApprove(tx: Transaction, caller: string) {
@@ -38,11 +39,15 @@ export class Approvals implements Outcome {
         }
     }
 
-    disapprove(tx: Transaction): TransactionResult {
-        return disapproveIntent(tx, { account: this.multisig, key: this.key });
+    disapprove(tx: Transaction) {
+        tx.add(
+            disapproveIntent({ arguments: { account: this.multisig, key: this.key } })
+        );
     }
 
-    execute(tx: Transaction): TransactionResult {
-        return executeIntent(tx, { account: this.multisig, key: this.key, clock: tx.object.clock });
+    execute(tx: Transaction) {
+        tx.add(
+            executeIntent({ arguments: { account: this.multisig, key: this.key } })
+        );
     }
 }

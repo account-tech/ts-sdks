@@ -19,7 +19,7 @@
     "codegen": "sui-ts-codegen generate"
   },
   "dependencies": {
-    "@account.tech/core": "0.1.26",
+    "@account.tech/core": "file:../../ts-core",
     "@mysten/codegen": "^0.5.5",
     "@mysten/sui": "^1.42.0",
     "bun-types": "^1.3.0"

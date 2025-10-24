@@ -46,7 +46,7 @@ export interface NewOptions {
 export function _new(options: NewOptions) {
     const packageAddress = options.package ?? '@account/protocol';
     const argumentsTypes = [
-        '0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242::extensions::Extensions',
+        '0x1fe0f14fab4da458fde0de69980b3e3f38930f793540546c76a4b64a0dd87b31::extensions::Extensions',
         'bool',
         'vector<0x0000000000000000000000000000000000000000000000000000000000000001::string::String>',
         'vector<address>',
@@ -78,7 +78,7 @@ export interface NewLatestExtensionsOptions {
 export function newLatestExtensions(options: NewLatestExtensionsOptions) {
     const packageAddress = options.package ?? '@account/protocol';
     const argumentsTypes = [
-        '0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242::extensions::Extensions',
+        '0x1fe0f14fab4da458fde0de69980b3e3f38930f793540546c76a4b64a0dd87b31::extensions::Extensions',
         'vector<0x0000000000000000000000000000000000000000000000000000000000000001::string::String>'
     ] satisfies string[];
     const parameterNames = ["extensions", "names"];
@@ -109,7 +109,7 @@ export interface NewInnerOptions {
 export function newInner(options: NewInnerOptions) {
     const packageAddress = options.package ?? '@account/protocol';
     const argumentsTypes = [
-        '0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242::extensions::Extensions',
+        '0x1fe0f14fab4da458fde0de69980b3e3f38930f793540546c76a4b64a0dd87b31::extensions::Extensions',
         `${packageAddress}::deps::Deps`,
         'vector<0x0000000000000000000000000000000000000000000000000000000000000001::string::String>',
         'vector<address>',

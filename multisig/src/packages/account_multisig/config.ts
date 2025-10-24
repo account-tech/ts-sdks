@@ -51,9 +51,9 @@ export interface RequestConfigMultisigOptions {
 export function requestConfigMultisig(options: RequestConfigMultisigOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        '0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Auth',
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`,
-        '0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::intents::Params',
+        '0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Auth',
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`,
+        '0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::intents::Params',
         `${packageAddress}::multisig::Approvals`,
         'vector<address>',
         'vector<u64>',
@@ -85,8 +85,8 @@ export interface ExecuteConfigMultisigOptions {
 export function executeConfigMultisig(options: ExecuteConfigMultisigOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::executable::Executable<${packageAddress}::multisig::Approvals>`,
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::executable::Executable<${packageAddress}::multisig::Approvals>`,
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`
     ] satisfies string[];
     const parameterNames = ["executable", "account"];
     return (tx: Transaction) => tx.moveCall({
@@ -109,7 +109,7 @@ export interface DeleteConfigMultisigOptions {
 export function deleteConfigMultisig(options: DeleteConfigMultisigOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        '0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::intents::Expired'
+        '0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::intents::Expired'
     ] satisfies string[];
     const parameterNames = ["expired"];
     return (tx: Transaction) => tx.moveCall({

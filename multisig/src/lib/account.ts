@@ -1,15 +1,11 @@
-import { Transaction, TransactionArgument, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
-import { Account as AccountRaw } from "../packages/account_protocol/account/structs";
-import { destroyEmptyIntent, confirmExecution } from "../.gen/account-protocol/account/functions";
-import { Multisig as MultisigRaw } from "../.gen/account-multisig/multisig/structs";
-import { newAccount } from "../.gen/account-multisig/multisig/functions";
-import * as configMultisig from "../.gen/account-multisig/config/functions";
-import * as config from "../.gen/account-protocol/config/functions";
-import { approveIntent, disapproveIntent, executeIntent, authenticate, emptyOutcome, sendInvite, join, leave } from "../.gen/account-multisig/multisig/functions";
-import { destroyEmptyExpired } from "../.gen/account-protocol/intents/functions";
-import { DepFields } from "../.gen/account-protocol/deps/structs";
-import { MemberFields, RoleFields } from "../.gen/account-multisig/multisig/structs";
-import { Fees as FeesRaw } from "../.gen/account-multisig/fees/structs";
+import { Transaction, TransactionArgument, TransactionResult } from "@mysten/sui/transactions";
+import { Account as AccountRaw, destroyEmptyIntent, confirmExecution } from "../packages/account_protocol/account";
+import { Multisig as MultisigRaw, newAccount } from "../packages/account_multisig/multisig";
+import * as configMultisig from "../packages/account_multisig/config";
+import * as config from "../packages/account_protocol/config";
+import { approveIntent, disapproveIntent, executeIntent, authenticate, emptyOutcome, sendInvite, join, leave } from "../packages/account_multisig/multisig";
+import { destroyEmptyExpired } from "../packages/account_protocol/intents";
+import { Fees as FeesRaw } from "../packages/account_multisig/fees";
 
 import { Account, Dep } from "@account.tech/core/lib/account";
 import { ACCOUNT_PROTOCOL, EXTENSIONS, SUI_FRAMEWORK } from "@account.tech/core/types";
@@ -17,6 +13,7 @@ import { Intent, ConfigDepsArgs } from "@account.tech/core/lib/intents";
 import { User } from "@account.tech/core/lib/user";
 import { Role, MemberProfile, MultisigData, ConfigMultisigArgs } from "./types";
 import { MULTISIG_FEES, MULTISIG_GENERICS, MULTISIG_CONFIG_TYPE } from "./constants";
+import { RawTransactionArgument } from "src/packages/utils";
 
 export class Multisig extends Account implements MultisigData {
     static type = MULTISIG_CONFIG_TYPE;
@@ -40,22 +37,28 @@ export class Multisig extends Account implements MultisigData {
             throw new Error("No address provided to refresh multisig");
         }
 
-        const accountReified = AccountRaw.r(MultisigRaw.r);
-        const multisigAccount = await accountReified.fetch(this.client, id);
+        const multisigObj = await this.client.getObject({
+            id,
+            options: { showBcs: true },
+        });
+        if (multisigObj.data?.bcs?.dataType !== 'moveObject') {
+            throw new Error('Expected a move object')
+        }
 
+        const multisigAccount = AccountRaw(MultisigRaw).fromBase64(multisigObj.data.bcs.bcsBytes);
         // get metadata
         const metadata = multisigAccount.metadata.inner.contents.map((m: any) => ({ key: m.key, value: m.value }));
 
         // get deps
-        const deps: Dep[] = multisigAccount.deps.inner.map((dep: DepFields) => {
+        const deps: Dep[] = multisigAccount.deps.inner.map(dep => {
             return { name: dep.name, addr: dep.addr, version: Number(dep.version) };
         });
 
         // get all members" data (from account and member)
-        const membersAddress: string[] = multisigAccount.config.members.map((member: MemberFields) => member.addr);
+        const membersAddress: string[] = multisigAccount.config.members.map(member => member.addr);
         const members = await Promise.all(membersAddress.map(async address => {
-            const weight = multisigAccount.config.members.find((m: MemberFields) => m.addr == address)?.weight;
-            const roles = multisigAccount.config.members.find((m: MemberFields) => m.addr == address)?.roles.contents;
+            const weight = multisigAccount.config.members.find(m => m.addr == address)?.weight;
+            const roles = multisigAccount.config.members.find(m => m.addr == address)?.roles.contents;
             const user = await User.init(this.client, MULTISIG_CONFIG_TYPE);
             const { username, avatar } = await user.fetchProfile(address);
             return {
@@ -80,17 +83,16 @@ export class Multisig extends Account implements MultisigData {
         // get thresholds
         const global = { threshold: Number(multisigAccount.config.global), totalWeight: globalWeight };
         const roles: Record<string, Role> = {};
-        multisigAccount.config.roles.forEach((role: RoleFields) => {
+        multisigAccount.config.roles.forEach(role => {
             roles[role.name] = { threshold: Number(role.threshold), totalWeight: roleWeights[role.name] || 0 };
         });
 
         return {
-            id: multisigAccount.id,
+            id: multisigAccount.id.id,
             metadata,
             deps,
-            unverifiedDepsAllowed: multisigAccount.deps.unverifiedAllowed,
-            lockedObjects: multisigAccount.intents.locked.contents,
-            intentsBagId: multisigAccount.intents.inner.id,
+            unverifiedDepsAllowed: multisigAccount.deps.unverified_allowed,
+            intentsBagId: multisigAccount.intents.inner.id.id,
             global,
             roles,
             members,
@@ -98,8 +100,16 @@ export class Multisig extends Account implements MultisigData {
     }
 
     async fetchFees(): Promise<bigint> {
-        const fees = await FeesRaw.fetch(this.client, MULTISIG_FEES);
-        return fees.amount;
+        const feesObj = await this.client.getObject({
+            id: MULTISIG_FEES,
+            options: { showBcs: true },
+        });
+        if (feesObj.data?.bcs?.dataType !== 'moveObject') {
+            throw new Error('Expected a move object')
+        }
+
+        const fees = FeesRaw.fromBase64(feesObj.data.bcs.bcsBytes);
+        return BigInt(fees.amount);
     }
 
     async refresh(id: string = this.id) {
@@ -112,7 +122,6 @@ export class Multisig extends Account implements MultisigData {
         this.metadata = multisig.metadata;
         this.deps = multisig.deps;
         this.unverifiedDepsAllowed = multisig.unverifiedDepsAllowed;
-        this.lockedObjects = multisig.lockedObjects;
         this.intentsBagId = multisig.intentsBagId;
         this.global = multisig.global;
         this.roles = multisig.roles;
@@ -125,7 +134,6 @@ export class Multisig extends Account implements MultisigData {
             metadata: this.metadata,
             deps: this.deps,
             unverifiedDepsAllowed: this.unverifiedDepsAllowed,
-            lockedObjects: this.lockedObjects,
             intentsBagId: this.intentsBagId,
             global: this.global,
             roles: this.roles,
@@ -141,29 +149,27 @@ export class Multisig extends Account implements MultisigData {
         return member;
     }
 
-
     newMultisig(
         tx: Transaction,
-        coin: TransactionObjectInput,
+        coin: RawTransactionArgument<string>,
     ): TransactionResult {
-        return newAccount(
-            tx,
-            {
-                extensions: EXTENSIONS,
-                fees: MULTISIG_FEES,
-                coin,
-            }
+        return tx.add(
+            newAccount({
+                arguments: {
+                    extensions: EXTENSIONS,
+                    fees: MULTISIG_FEES,
+                    coin,
+                }
+            })
         );
     }
 
     shareMultisig(
         tx: Transaction,
         account: TransactionArgument,
-    ): TransactionResult {
-        return tx.moveCall({
-            package: SUI_FRAMEWORK,
-            module: "transfer",
-            function: "public_share_object",
+    ) {
+        tx.moveCall({
+            target: `${SUI_FRAMEWORK}::transfer::public_share_object`,
             typeArguments: [`${ACCOUNT_PROTOCOL.V1}::account::Account<${MULTISIG_GENERICS[0]}>`],
             arguments: [account],
         });
@@ -171,84 +177,98 @@ export class Multisig extends Account implements MultisigData {
 
     joinMultisig(
         tx: Transaction,
-        user: TransactionObjectInput,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        user: RawTransactionArgument<string>,
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return join(tx, { user, account });
+        tx.add(
+            join({ arguments: { user, account } })
+        );
     }
 
     leaveMultisig(
         tx: Transaction,
-        user: TransactionObjectInput,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        user: RawTransactionArgument<string>,
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return leave(tx, { user, account });
+        tx.add(
+            leave({ arguments: { user, account } })
+        );
     }
 
     sendInvite(
         tx: Transaction,
         recipient: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return sendInvite(tx, { account, recipient });
+        tx.add(
+            sendInvite({ arguments: { account, recipient } })
+        );
     }
 
     authenticate(
         tx: Transaction,
-        account: TransactionObjectInput = this.id,
+        account: RawTransactionArgument<string> = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return authenticate(tx, account);
+        return tx.add(
+            authenticate({ arguments: { account } })
+        );
     }
 
-    emptyApprovalsOutcome(
-        tx: Transaction
-    ): TransactionResult {
-        return emptyOutcome(tx);
+    emptyApprovalsOutcome(tx: Transaction): TransactionResult {
+        return tx.add(
+            emptyOutcome()
+        );
     }
 
     approveIntent(
         tx: Transaction,
         key: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return approveIntent(tx, { account, key });
+        tx.add(
+            approveIntent({ arguments: { account, key } })
+        );
     }
 
     disapproveIntent(
         tx: Transaction,
         key: string,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return disapproveIntent(tx, { account, key });
+        tx.add(
+            disapproveIntent({ arguments: { account, key } })
+        );
     }
 
     executeIntent(
         tx: Transaction,
         key: string,
-        account: TransactionObjectInput = this.id,
+        account: RawTransactionArgument<string> = this.id,
     ): TransactionResult {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
-        return executeIntent(tx, { account, key, clock: tx.object.clock });
+        return tx.add(
+            executeIntent({ arguments: { account, key } })
+        );
     }
 
     // === Atomic Intents ===
@@ -256,8 +276,8 @@ export class Multisig extends Account implements MultisigData {
     atomicConfigMultisig(
         tx: Transaction,
         actionsArgs: ConfigMultisigArgs,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
@@ -288,66 +308,112 @@ export class Multisig extends Account implements MultisigData {
         const params = Intent.createParams(tx, { key: "config-multisig" });
         const outcome = this.emptyApprovalsOutcome(tx);
 
-        configMultisig.requestConfigMultisig(
-            tx,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-                addresses,
-                weights,
-                roles,
-                global,
-                roleNames,
-                roleThresholds,
-            }
+        tx.add(
+            configMultisig.requestConfigMultisig({
+                arguments: {
+                    auth,
+                    account,
+                    params,
+                    outcome,
+                    addresses,
+                    weights,
+                    roles,
+                    global,
+                    roleNames,
+                    roleThresholds,
+                }
+            })
         );
 
         this.approveIntent(tx, "config-multisig", account);
         const executable = this.executeIntent(tx, "config-multisig", account);
-        configMultisig.executeConfigMultisig(tx, { executable, account });
-        confirmExecution(tx, MULTISIG_GENERICS, { account, executable });
+        tx.add(
+            configMultisig.executeConfigMultisig({
+                arguments: {
+                    executable,
+                    account,
+                }
+            })
+        );
+        tx.add(
+            confirmExecution({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: {
+                    account,
+                    executable,
+                }
+            })
+        );
 
-        const expired = destroyEmptyIntent(tx, MULTISIG_GENERICS, { account, key: "config-multisig" });
-        configMultisig.deleteConfigMultisig(tx, expired);
-        return destroyEmptyExpired(tx, expired);
+        const expired = tx.add(
+            destroyEmptyIntent({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: {
+                    account,
+                    key: "config-multisig",
+                }
+            })
+        );
+        tx.add(
+            configMultisig.deleteConfigMultisig({ arguments: { expired } })
+        );
+        tx.add(
+            destroyEmptyExpired({ arguments: { expired } })
+        );
     }
 
     atomicToggleUnverifiedDepsAllowed(
         tx: Transaction,
-        account: TransactionObjectInput,
-    ): TransactionResult {
+        account: RawTransactionArgument<string> = this.id,
+    ) {
+        if (!account) {
+            throw new Error("No account available: this.id is not set and no account was provided");
+        }
         const auth = this.authenticate(tx, account);
         const params = Intent.createParams(tx, { key: "toggle-unverified-deps" });
         const outcome = this.emptyApprovalsOutcome(tx);
 
-        config.requestToggleUnverifiedAllowed(
-            tx,
-            MULTISIG_GENERICS,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-            }
+        tx.add(
+            config.requestToggleUnverifiedAllowed({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: { auth, account, params, outcome }
+            })
         );
-
+        
         this.approveIntent(tx, "toggle-unverified-deps", account);
         const executable = this.executeIntent(tx, "toggle-unverified-deps", account);
-        config.executeToggleUnverifiedAllowed(tx, MULTISIG_GENERICS, { executable, account });
-        confirmExecution(tx, MULTISIG_GENERICS, { account, executable });
+        tx.add(
+            config.executeToggleUnverifiedAllowed({ 
+                typeArguments: MULTISIG_GENERICS,
+                arguments: { executable, account },
+            })
+        );
+        tx.add(
+            confirmExecution({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: { account, executable }
+            })
+        );
 
-        const expired = destroyEmptyIntent(tx, MULTISIG_GENERICS, { account, key: "toggle-unverified-deps" });
-        config.deleteToggleUnverifiedAllowed(tx, expired);
-        return destroyEmptyExpired(tx, expired);
+        const expired = tx.add(
+            destroyEmptyIntent({ 
+                typeArguments: MULTISIG_GENERICS, 
+                arguments: { account, key: "toggle-unverified-deps" } 
+            })
+        );
+        tx.add(
+            config.deleteToggleUnverifiedAllowed({ arguments: { expired } })
+        );
+        tx.add(
+            destroyEmptyExpired({ arguments: { expired } })
+        );
     }
 
     atomicConfigDeps(
         tx: Transaction,
         actionsArgs: ConfigDepsArgs,
-        account: TransactionObjectInput = this.id,
-    ): TransactionResult {
+        account: RawTransactionArgument<string> = this.id,
+    ) {
         if (!account) {
             throw new Error("No account available: this.id is not set and no account was provided");
         }
@@ -365,29 +431,50 @@ export class Multisig extends Account implements MultisigData {
         const params = Intent.createParams(tx, { key: "config-deps" });
         const outcome = this.emptyApprovalsOutcome(tx);
 
-        config.requestConfigDeps(
-            tx,
-            MULTISIG_GENERICS,
-            {
-                auth,
-                account,
-                params,
-                outcome,
-                extensions: EXTENSIONS,
-                names,
-                addresses,
-                versions,
-            }
+        tx.add(
+            config.requestConfigDeps({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: {
+                    auth,
+                    account,
+                    params,
+                    outcome,
+                    extensions: EXTENSIONS,
+                    names,
+                    addresses,
+                    versions,
+                }
+            })
         );
 
         this.approveIntent(tx, "config-deps", account);
         const executable = this.executeIntent(tx, "config-deps", account);
-        config.executeConfigDeps(tx, MULTISIG_GENERICS, { executable, account });
-        confirmExecution(tx, MULTISIG_GENERICS, { account, executable });
 
-        const expired = destroyEmptyIntent(tx, MULTISIG_GENERICS, { account, key: "config-deps" });
-        config.deleteConfigDeps(tx, expired);
-        return destroyEmptyExpired(tx, expired);
+        tx.add(
+            config.executeConfigDeps({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: { executable, account }
+            })
+        );
+        tx.add(
+            confirmExecution({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: { account, executable }
+            })
+        );
+        
+        const expired = tx.add(
+            destroyEmptyIntent({
+                typeArguments: MULTISIG_GENERICS,
+                arguments: { account, key: "config-deps" }
+            })
+        );
+        tx.add(
+            config.deleteConfigDeps({ arguments: { expired } })
+        );
+        tx.add(
+            destroyEmptyExpired({ arguments: { expired } })
+        );
     }
 }
 

@@ -61,7 +61,7 @@ export interface NewAccountOptions {
 export function newAccount(options: NewAccountOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        '0x1d30bc47bb24a3d2171ac3049088ad1f7d29c0d6ff8bb899b64206c5ee543242::extensions::Extensions',
+        '0x1fe0f14fab4da458fde0de69980b3e3f38930f793540546c76a4b64a0dd87b31::extensions::Extensions',
         `${packageAddress}::fees::Fees`,
         '0x0000000000000000000000000000000000000000000000000000000000000002::coin::Coin<0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI>'
     ] satisfies string[];
@@ -86,7 +86,7 @@ export interface AuthenticateOptions {
 export function authenticate(options: AuthenticateOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`
     ] satisfies string[];
     const parameterNames = ["account"];
     return (tx: Transaction) => tx.moveCall({
@@ -125,7 +125,7 @@ export interface ApproveIntentOptions {
 export function approveIntent(options: ApproveIntentOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`,
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`,
         '0x0000000000000000000000000000000000000000000000000000000000000001::string::String'
     ] satisfies string[];
     const parameterNames = ["account", "key"];
@@ -154,7 +154,7 @@ export interface DisapproveIntentOptions {
 export function disapproveIntent(options: DisapproveIntentOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`,
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`,
         '0x0000000000000000000000000000000000000000000000000000000000000001::string::String'
     ] satisfies string[];
     const parameterNames = ["account", "key"];
@@ -183,7 +183,7 @@ export interface ExecuteIntentOptions {
 export function executeIntent(options: ExecuteIntentOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`,
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`,
         '0x0000000000000000000000000000000000000000000000000000000000000001::string::String',
         '0x0000000000000000000000000000000000000000000000000000000000000002::clock::Clock'
     ] satisfies string[];
@@ -238,8 +238,8 @@ export interface JoinOptions {
 export function join(options: JoinOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        '0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::user::User',
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`
+        '0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::user::User',
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`
     ] satisfies string[];
     const parameterNames = ["user", "account"];
     return (tx: Transaction) => tx.moveCall({
@@ -264,8 +264,8 @@ export interface LeaveOptions {
 export function leave(options: LeaveOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        '0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::user::User',
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`
+        '0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::user::User',
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`
     ] satisfies string[];
     const parameterNames = ["user", "account"];
     return (tx: Transaction) => tx.moveCall({
@@ -290,7 +290,7 @@ export interface SendInviteOptions {
 export function sendInvite(options: SendInviteOptions) {
     const packageAddress = options.package ?? '@account/multisig';
     const argumentsTypes = [
-        `0xc967e077f5b0f892658d854d5a454f8ed84027d9afd3cab26a5e6d6004637145::account::Account<${packageAddress}::multisig::Multisig>`,
+        `0x56b160354dba79f03cd31dcfcde9ad93e70dedc23466bf6fa942c251de5e9d60::account::Account<${packageAddress}::multisig::Multisig>`,
         'address'
     ] satisfies string[];
     const parameterNames = ["account", "recipient"];

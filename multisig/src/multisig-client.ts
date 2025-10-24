@@ -1,17 +1,17 @@
-import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { Transaction, TransactionResult } from "@mysten/sui/transactions";
 import { SuiObjectResponse, SuiMoveObject } from "@mysten/sui/client";
 import {
 	BorrowCapIntent,
 	UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 	TakeNftsIntent, ListNftsIntent,
 	UpgradePackageIntent, RestrictPolicyIntent,
-	WithdrawAndTransferToVaultIntent, WithdrawAndTransferIntent, WithdrawAndVestIntent,
+	WithdrawAndTransferToVaultIntent, WithdrawObjectsAndTransferIntent, WithdrawCoinAndTransferIntent, WithdrawAndVestIntent,
 	SpendAndTransferIntent, SpendAndVestIntent,
 	ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
 	Intent, IntentStatus, ActionsArgs, IntentArgs, ActionsIntentTypes, Policy, ProtocolRoles, ActionsRoles,
 } from "@account.tech/core/lib/intents";
 import { OwnedData, Currencies, Kiosks, Vaults, Packages, Caps } from "@account.tech/core/lib/objects";
-import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/types";
+import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS } from "@account.tech/core/types";
 import * as commands from "@account.tech/core/lib/commands";
 import { AccountSDK } from "@account.tech/core/sdk";
 import { Invite, Profile } from "@account.tech/core/lib/user";
@@ -22,6 +22,7 @@ import { Member, Threshold, MultisigData, DepStatus, MultisigIntentTypes, Intent
 import { Multisig } from "./lib/account";
 import { Approvals } from "./lib/outcome";
 import { ConfigMultisigIntent } from "./lib/intents";
+import { RawTransactionArgument } from "./packages/utils";
 
 export class MultisigClient extends AccountSDK {
 	previews: { id: string, name: string }[] = [];
@@ -48,7 +49,7 @@ export class MultisigClient extends AccountSDK {
 					UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 					TakeNftsIntent, ListNftsIntent,
 					UpgradePackageIntent, RestrictPolicyIntent,
-					WithdrawAndTransferToVaultIntent, WithdrawAndTransferIntent, WithdrawAndVestIntent,
+					WithdrawAndTransferToVaultIntent, WithdrawObjectsAndTransferIntent, WithdrawCoinAndTransferIntent, WithdrawAndVestIntent,
 					SpendAndTransferIntent, SpendAndVestIntent,
 					ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
 					ConfigMultisigIntent,
@@ -123,8 +124,8 @@ export class MultisigClient extends AccountSDK {
 			throw new Error("Global threshold must be smaller than the number of members");
 		}
 		// create the user if the user doesn't have one
-		let userId: TransactionPureInput = this.user.id;
-		let createdUser: TransactionPureInput | null = null;
+		let userId: RawTransactionArgument<string> = this.user.id;
+		let createdUser: RawTransactionArgument<string> | null = null;
 		if (userId === "") {
 			if (!newUser) throw new Error("User must create an user before creating a multisig");
 			createdUser = this.user.createUser(tx, newUser.username, newUser.profilePicture); 
@@ -204,15 +205,6 @@ export class MultisigClient extends AccountSDK {
 	) {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
-		// not optimal, but we need to get the object types to execute the intent
-		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
-		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
-			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects!);
-		}
-		// @ts-ignore: Property 'type' exists on the constructor for Intent subclasses
-		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndVest) {
-			(intent as WithdrawAndVestIntent).initTypeById(this.ownedObjects!);
-		}
 		
 		(intent.outcome as Approvals).maybeApprove(tx, caller);
 		const executable = this.multisig.executeIntent(tx, intentKey);
@@ -250,8 +242,8 @@ export class MultisigClient extends AccountSDK {
 		intent.deleteExpired(tx, MULTISIG_GENERICS, intentKey);
 	}
 
-	acceptInvite(tx: Transaction, invite: TransactionObjectInput) {
-		let user: TransactionObjectInput = this.user.id;
+	acceptInvite(tx: Transaction, invite: RawTransactionArgument<string>) {
+		let user: RawTransactionArgument<string> = this.user.id;
 		if (user === "") {
 			user = this.user.createUser(tx);
 		}
@@ -264,7 +256,7 @@ export class MultisigClient extends AccountSDK {
 		}
 	}
 
-	refuseInvite(tx: Transaction, invite: TransactionObjectInput) {
+	refuseInvite(tx: Transaction, invite: RawTransactionArgument<string>) {
 		this.user.refuseInvite(tx, invite);
 	}
 
@@ -479,27 +471,11 @@ export class MultisigClient extends AccountSDK {
 
 	// === Commands ===
 
-	/// Automatically merges and splits coins, then returns the ids of the newly created coins to be used in an intent
-	mergeAndSplit(
-		tx: Transaction,
-		coinType: string,
-		toSplit: bigint[], // amounts
-	): TransactionResult {
-		const coins = this.ownedObjects?.getCoin(coinType);
-		const availableInstances = coins?.instances.filter(instance => !this.multisig.lockedObjects.includes(instance.ref.objectId));
-		if (!availableInstances || availableInstances.reduce((acc, curr) => acc + curr.amount, 0n) < toSplit.reduce((acc, curr) => acc + curr, 0n)) {
-			throw new Error("Not enough coins");
-		}
-
-		const auth = this.multisig.authenticate(tx);
-		return commands.mergeAndSplit(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, availableInstances.map(instance => instance.ref).slice(0, 500), toSplit);
-	}
-
 	/// Deposits and locks a Cap object in the Account
 	depositCap(
 		tx: Transaction,
 		capType: string,
-		capObject: TransactionObjectInput,
+		capObject: RawTransactionArgument<string>,
 	) {
 		const auth = this.multisig.authenticate(tx);
 		commands.depositCap(tx, MULTISIG_CONFIG_TYPE, capType, auth, this.multisig.id, capObject);
@@ -526,7 +502,7 @@ export class MultisigClient extends AccountSDK {
 	depositTreasuryCap(
 		tx: Transaction,
 		coinType: string,
-		treasuryCap: TransactionObjectInput,
+		treasuryCap: RawTransactionArgument<string>,
 	) {
 		const auth = this.multisig.authenticate(tx);
 		commands.depositTreasuryCap(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, treasuryCap);
@@ -545,8 +521,8 @@ export class MultisigClient extends AccountSDK {
 	async placeInKiosk(
 		tx: Transaction,
 		nftType: string,
-		senderKiosk: TransactionObjectInput,
-		senderCap: TransactionObjectInput,
+		senderKiosk: RawTransactionArgument<string>,
+		senderCap: RawTransactionArgument<string>,
 		kioskName: string,
 		nftId: string,
 	) {
@@ -617,7 +593,7 @@ export class MultisigClient extends AccountSDK {
 	depositUpgradeCap(
 		tx: Transaction,
 		packageName: string,
-		upgradeCap: TransactionObjectInput,
+		upgradeCap: RawTransactionArgument<string>,
 		timeLockDelayMs: bigint,
 	) {
 		const auth = this.multisig.authenticate(tx);
@@ -638,7 +614,7 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		coinType: string,
 		vaultName: string,
-		coin: TransactionObjectInput,
+		coin: RawTransactionArgument<string>,
 	) {
 		const auth = this.multisig.authenticate(tx);
 		commands.depositFromWallet(tx, MULTISIG_CONFIG_TYPE, coinType, auth, this.multisig.id, vaultName, coin);
@@ -886,13 +862,6 @@ export class MultisigClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [amount]);
-		const coinId = tx.moveCall({
-			target: `${MOVE_STDLIB}::vector::swap_remove`,
-			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-			arguments: [coinIds, tx.pure.u64(0)],
-		});
-
 		WithdrawAndBurnIntent.prototype.request(
 			tx,
 			MULTISIG_GENERICS,
@@ -900,7 +869,7 @@ export class MultisigClient extends AccountSDK {
 			this.multisig.id,
 			params,
 			outcome,
-			{ coinType, coinId, amount },
+			{ coinType, amount },
 		);
 
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
@@ -964,13 +933,6 @@ export class MultisigClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]);
-		const coinId = tx.moveCall({
-			target: `${MOVE_STDLIB}::vector::swap_remove`,
-			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-			arguments: [coinIds, tx.pure.u64(0)],
-		});
-
 		WithdrawAndTransferToVaultIntent.prototype.request(
 			tx,
 			MULTISIG_GENERICS,
@@ -978,36 +940,22 @@ export class MultisigClient extends AccountSDK {
 			this.multisig.id,
 			params,
 			outcome,
-			{ coinType, coinId, coinAmount, vaultName },
+			{ coinType, coinAmount, vaultName },
 		);
 
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
-	requestWithdrawAndTransfer(
+	requestWithdrawObjectsAndTransfer(
 		tx: Transaction,
 		intentArgs: IntentArgs,
-		coins: { coinType: string, coinAmount: bigint }[],
-		objectIds: string[],
-		recipient: string,
+		transfers: { objectId: string, recipient: string }[],
 	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
-
-		let transfers = objectIds.map(objectId => ({ objectId: tx.pure.id(objectId) as TransactionPureInput, recipient }));
-
-		coins.forEach(coin => {
-			const ids = this.mergeAndSplit(tx, coin.coinType, [coin.coinAmount]);
-			const objectId = tx.moveCall({
-				target: `${MOVE_STDLIB}::vector::swap_remove`,
-				typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-				arguments: [ids, tx.pure.u64(0)],
-			});
-			transfers.push({ objectId, recipient });
-		});
 		
-		WithdrawAndTransferIntent.prototype.request(
+		WithdrawObjectsAndTransferIntent.prototype.request(
 			tx,
 			MULTISIG_GENERICS,
 			auth,
@@ -1020,55 +968,25 @@ export class MultisigClient extends AccountSDK {
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
 
-	// optimized version of withdrawAndTransfer for airdropping objects with same type to multiple recipients
-	requestWithdrawAndAirdropObjects(
+	requestWithdrawCoinAndTransfer(
 		tx: Transaction,
 		intentArgs: IntentArgs,
-		drops: {objectId: string, recipient: string}[],
+		coinType: string,
+		transfers: { amount: bigint, recipient: string }[],
 	) {
 		const auth = this.multisig.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		WithdrawAndTransferIntent.prototype.request(
+		WithdrawCoinAndTransferIntent.prototype.request(
 			tx,
 			MULTISIG_GENERICS,
 			auth,
 			this.multisig.id,
 			params,
 			outcome,
-			{ transfers: drops },
+			{ coinType, transfers },
 		);
-
-		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
-	}
-
-	// optimized version of withdrawAndTransfer for airdropping coins to multiple recipients
-	requestWithdrawAndAirdropCoins(
-		tx: Transaction,
-		intentArgs: IntentArgs,
-		coinType: string,
-		drops: {recipient: string, amount: bigint}[],
-	) {
-		const auth = this.multisig.authenticate(tx);
-		const params = Intent.createParams(tx, intentArgs);
-		const outcome = this.multisig.emptyApprovalsOutcome(tx);
-
-		const coinIds = this.mergeAndSplit(tx, coinType, drops.map(drop => drop.amount));
-		const recipients = drops.map(drop => drop.recipient);
-		
-		tx.moveCall({
-			target: `${ACCOUNT_ACTIONS.V1}::owned_intents::request_withdraw_and_transfer`,
-			typeArguments: MULTISIG_GENERICS,
-			arguments: [
-				auth,
-				tx.object(this.multisig.id),
-				params,
-				outcome,
-				coinIds,
-				tx.pure.vector("address", recipients),
-			],
-		});
 
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
 	}
@@ -1086,13 +1004,6 @@ export class MultisigClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.multisig.emptyApprovalsOutcome(tx);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]); 
-		const coinId = tx.moveCall({
-			target: `${MOVE_STDLIB}::vector::swap_remove`,
-			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-			arguments: [coinIds, tx.pure.u64(0)],
-		});
-
 		WithdrawAndVestIntent.prototype.request(
 			tx,
 			MULTISIG_GENERICS,
@@ -1100,7 +1011,7 @@ export class MultisigClient extends AccountSDK {
 			this.multisig.id,
 			params,
 			outcome,
-			{ coinId, start, end, recipient },
+			{ coinType, coinAmount, start, end, recipient },
 		);
 
 		this.multisig.approveIntent(tx, intentArgs.key, this.multisig.id);
@@ -1209,7 +1120,7 @@ export class MultisigClient extends AccountSDK {
 		tx: Transaction,
 		caller: string,
 		intentKey: string,
-		useCap: (cap: TransactionObjectInput) => void,
+		useCap: (cap: TransactionResult) => void,
 	) {
 		const intent = this.getIntent(intentKey) as BorrowCapIntent;
 		// approve if necessary
