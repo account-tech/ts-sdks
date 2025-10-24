@@ -13,7 +13,7 @@ import { executeTx, MULTISIG, NETWORK, testKeypair } from "./utils";
 
     // ms.reorderMultisigs(tx, ["0x8e7c0b44b9552e2a25c53254c797f69e8cceed71745bca8e39daaad7796fa8f2", "0xd4ab6ea7a1ee3f277b1056d35595a4f2f1ef0fe1a98ed53f176cc545978e9ddb", "0x14c5ea70611c54558ce1b807064a27881cd85241e3b454cb75aef6fa611a96a7"]);
     
-    // ms.depositCap(tx, "0x2::display::Display<0x4ac609fe6e1f82e568f49e2abd00944bf30790fb9446f9838aadfd619d56bef1::my_hero::Hero>", "0x0004c2736bd34352788611e40cbab05b536344d7345a5b86b3f99a41155fb5ff");
+    ms.depositCap(tx, "0x2::package::Publisher", "0xcb3aa7b851838c71739afd70eb42613c20afc0c04a4b27fe514bfb9865f277a1");
     // ms.modifyName(tx, "New Name");
     // ms.depositTreasuryCap(tx, "0x4b19cbec59f1e5835de1fad038a7af4e4e7034d2815ffeb8d3f4c65cb357467::coin::COIN", "0xdfc76a1831924b8df709d2629b98329f6c89a80097a37e184ba66a02010d4601");
     // ms.openKiosk(tx, "NFTs");

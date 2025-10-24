@@ -3,7 +3,7 @@ import { MultisigClient } from "../../src/multisig-client";
 import { executeTx, NETWORK, MULTISIG, testKeypair } from "./utils";
 import { Approvals } from "../../src/lib/outcome";
 import { MULTISIG_GENERICS } from "../../src/lib/constants";
-import { BorrowCapIntent } from "@account.tech/core";
+import { BorrowCapIntent } from "@account.tech/core/lib/intents";
 
 /// Example showing how to borrow a cap and use it
 

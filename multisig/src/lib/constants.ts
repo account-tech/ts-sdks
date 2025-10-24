@@ -1,8 +1,8 @@
 export enum ACCOUNT_MULTISIG {
-    V1 = "0xe882c2c4a91d27f385f763e2f3de8388d67c2cd17f39f49cd5845de4fc3701cf",
+    V1 = "0xae205528b66901ceee822d9a932f0c14d2e0999eb13fbfa3403efff1afc5ea5e",
 }
 // Types
 export const MULTISIG_CONFIG_TYPE = `${ACCOUNT_MULTISIG.V1}::multisig::Multisig`;
 export const MULTISIG_GENERICS: [string, string] = [`${ACCOUNT_MULTISIG.V1}::multisig::Multisig`, `${ACCOUNT_MULTISIG.V1}::multisig::Approvals`];
 // Shared objects
-export const MULTISIG_FEES = "0x51d909ffc040b9ed00fc5d06a0ccaf8464453476e7f11014242eca9a06c611ec";
+export const MULTISIG_FEES = "0x82b6494d6b1b30bd9e039a8af4edff1498fa7dc01ab0dd59cfeed6ffb932281b";

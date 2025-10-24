@@ -1,5 +1,5 @@
 import { Transaction } from "@mysten/sui/transactions";
-import { approveIntent, disapproveIntent, executeIntent, Approvals as ApprovalsRaw } from "../packages/account_multisig/multisig";
+import { approveIntent, disapproveIntent, executeIntent } from "../packages/account_multisig/multisig";
 
 import { Outcome } from "@account.tech/core/lib/intents";
 import { ACCOUNT_MULTISIG } from "./constants";
@@ -15,12 +15,11 @@ export class Approvals implements Outcome {
     approved: string[];
 
     constructor(multisigId: string, key: string, fields: any) {
-        let approvals = ApprovalsRaw.fromBase64(fields);
         this.multisig = multisigId;
         this.key = key;
-        this.totalWeight = Number(approvals.total_weight);
-        this.roleWeight = Number(approvals.role_weight);
-        this.approved = approvals.approved.contents;
+        this.totalWeight = Number(fields.fields.total_weight);
+        this.roleWeight = Number(fields.fields.role_weight);
+        this.approved = fields.fields.approved.fields.contents;
     }
 
     hasApproved(addr: string): boolean {

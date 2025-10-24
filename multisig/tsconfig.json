@@ -41,7 +41,6 @@
     },
     "include": [
         "src",
-        "src/.gen/**/*"
     ],
     "exclude": [
         "node_modules",
