@@ -84,7 +84,7 @@ export class ConfigMultisigIntent extends Intent {
         _accountGenerics: [string, string], // can be anything, this is just to respect the interface
         executable: TransactionArgument,
     ) {
-        return tx.add(
+        tx.add(
             config.executeConfigMultisig({
                 arguments: {
                     executable,

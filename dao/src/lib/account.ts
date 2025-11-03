@@ -24,7 +24,7 @@ export class Dao extends Account implements DaoData {
         }
     }
 
-    async fetch(id: string = this.id)/*: Promise<DaoData> */ {
+    async fetch(id: string = this.id): Promise<DaoData> {
         if (!id && !this.id) {
             throw new Error("No address provided to refresh dao");
         }
@@ -46,7 +46,6 @@ export class Dao extends Account implements DaoData {
             metadata,
             deps,
             unverifiedDepsAllowed: fields.deps.fields.unverified_allowed,
-            lockedObjects: fields.intents.fields.locked.fields.contents,
             intentsBagId: fields.intents.fields.inner.fields.id.id,
             assetType: normalizeStructTag(fields.config.fields.asset_type.fields.name),
             authVotingPower: BigInt(fields.config.fields.auth_voting_power),
@@ -73,7 +72,6 @@ export class Dao extends Account implements DaoData {
         this.metadata = dao.metadata;
         this.deps = dao.deps;
         this.unverifiedDepsAllowed = dao.unverifiedDepsAllowed;
-        this.lockedObjects = dao.lockedObjects;
         this.intentsBagId = dao.intentsBagId;
         this.assetType = dao.assetType;
         this.authVotingPower = dao.authVotingPower;
@@ -90,7 +88,6 @@ export class Dao extends Account implements DaoData {
             metadata: this.metadata,
             deps: this.deps,
             unverifiedDepsAllowed: this.unverifiedDepsAllowed,
-            lockedObjects: this.lockedObjects,
             intentsBagId: this.intentsBagId,
             assetType: this.assetType,
             authVotingPower: this.authVotingPower,

@@ -1,10 +1,10 @@
-import { Transaction, TransactionResult, TransactionObjectInput } from "@mysten/sui/transactions";
-import * as accountProtocol from "../.gen/account-protocol/account/functions";
-import * as intents from "../.gen/account-protocol/intents/functions";
+import { Transaction, TransactionArgument } from "@mysten/sui/transactions";
+import * as accountProtocol from "../packages/account_protocol/account";
+import * as config from "../packages/account_dao/config";
+import * as intents from "../packages/account_protocol/intents";
 
 import { Intent } from "@account.tech/core/lib/intents";
 import { ConfigDaoArgs, DaoIntentTypes } from "./types";
-import { ACCOUNT_DAO } from "./constants";
 
 export class ConfigDaoIntent extends Intent {
     static type = DaoIntentTypes.ConfigDao;
@@ -28,69 +28,69 @@ export class ConfigDaoIntent extends Intent {
     request(
         tx: Transaction,
         _accountGenerics: null, 
-        auth: TransactionObjectInput,
+        auth: TransactionArgument,
         account: string,
-        params: TransactionObjectInput,
-        outcome: TransactionObjectInput,
+        params: TransactionArgument,
+        outcome: TransactionArgument,
         actionArgs: ConfigDaoArgs,
-    ): TransactionResult {
-
-        return tx.moveCall(
-            {
-                target: `${ACCOUNT_DAO.V1}::config::request_config_dao`,
+    ) {
+        tx.add(
+            config.requestConfigDao({
                 typeArguments: [actionArgs.assetType],
-                arguments: [
-                    tx.object(auth),
-                    tx.object(account),
-                    tx.object(params),
-                    tx.object(outcome),
-                    tx.pure.u64(actionArgs.authVotingPower),
-                    tx.pure.u64(actionArgs.unstakingCooldown),
-                    tx.pure.u8(actionArgs.votingRule),
-                    tx.pure.u64(actionArgs.maxVotingPower),
-                    tx.pure.u64(actionArgs.minimumVotes),
-                    tx.pure.u64(actionArgs.votingQuorum)
-                ],
-            }
+                arguments: {
+                    auth,
+                    account,
+                    params,
+                    outcome,
+                    authVotingPower: actionArgs.authVotingPower,
+                    unstakingCooldown: actionArgs.unstakingCooldown,
+                    votingRule: actionArgs.votingRule,
+                    maxVotingPower: actionArgs.maxVotingPower,
+                    minimumVotes: actionArgs.minimumVotes,
+                    votingQuorum: actionArgs.votingQuorum,
+                }
+            })
         );
     }
 
     execute(
         tx: Transaction,
         _accountGenerics: null,
-        executable: TransactionObjectInput,
-    ): TransactionResult {
-        return tx.moveCall({
-            target: `${ACCOUNT_DAO.V1}::config::execute_config_dao`,
-            arguments: [
-                tx.object(executable),
-                tx.object(this.account),
-            ],
-        });
+        executable: TransactionArgument,
+    ) {
+        tx.add(
+            config.executeConfigDao({
+                arguments: {
+                    executable,
+                    account: this.account,
+                }
+            })
+        );
     }
 
     clearEmpty(
         tx: Transaction,
         accountGenerics: [string, string],
         key: string,
-    ): TransactionResult {
-        const expired = accountProtocol.destroyEmptyIntent(
-            tx,
-            accountGenerics,
-            {
-                account: this.account,
-                key,
-            }
+    ) {
+        const expired = tx.add(
+            accountProtocol.destroyEmptyIntent({
+                typeArguments: accountGenerics,
+                arguments: {
+                    account: this.account,
+                    key,
+                }
+            })
         );
-        tx.moveCall({
-            target: `${ACCOUNT_DAO.V1}::config::delete_config_dao`,
-            arguments: [
-                expired,
-            ],
-        });
-        return intents.destroyEmptyExpired(
-            tx,
-            expired,
+        tx.add(
+            config.deleteConfigDao({
+                arguments: { expired }
+            })
+        );
+        tx.add(
+            intents.destroyEmptyExpired({
+                arguments: { expired }
+            })
         );
     }
 
@@ -98,25 +98,25 @@ export class ConfigDaoIntent extends Intent {
         tx: Transaction,
         accountGenerics: [string, string],
         key: string,
-    ): TransactionResult {
-        const expired = accountProtocol.deleteExpiredIntent(
-            tx,
-            accountGenerics,
-            {
-                account: this.account,
-                key,
-                clock: tx.object.clock,
-            }
+    ) {
+        const expired = tx.add(
+            accountProtocol.deleteExpiredIntent({
+                typeArguments: accountGenerics,
+                arguments: {
+                    account: this.account,
+                    key,
+                }
+            })
         );
-        tx.moveCall({
-            target: `${ACCOUNT_DAO.V1}::config::delete_config_dao`,
-            arguments: [
-                expired,
-            ],
-        });
-        return intents.destroyEmptyExpired(
-            tx,
-            expired,
+        tx.add(
+            config.deleteConfigDao({
+                arguments: { expired }
+            })
+        );
+        tx.add(
+            intents.destroyEmptyExpired({
+                arguments: { expired }
+            })
         );
     }
 }

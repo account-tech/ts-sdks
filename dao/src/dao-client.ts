@@ -1,16 +1,16 @@
-import { Transaction, TransactionObjectInput, TransactionResult } from "@mysten/sui/transactions";
+import { Transaction, TransactionResult } from "@mysten/sui/transactions";
 import {
 	BorrowCapIntent, EmptyIntent,
 	UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 	TakeNftsIntent, ListNftsIntent,
 	UpgradePackageIntent, RestrictPolicyIntent,
-	WithdrawAndTransferToVaultIntent, WithdrawAndTransferIntent, WithdrawAndVestIntent,
+	WithdrawAndTransferToVaultIntent, WithdrawCoinAndTransferIntent, WithdrawObjectsAndTransferIntent, WithdrawAndVestIntent,
 	SpendAndTransferIntent, SpendAndVestIntent,
 	ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
-	Intent, ActionsArgs, ActionsIntentTypes, Policy
+	Intent, ActionsArgs, Policy
 } from "@account.tech/core/lib/intents";
 import { OwnedData, Currencies, Kiosks, Vaults, Packages, Caps } from "@account.tech/core/lib/objects";
-import { MOVE_STDLIB, SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL, ACCOUNT_ACTIONS, TransactionPureInput } from "@account.tech/core/types";
+import { SUI_FRAMEWORK, TRANSFER_POLICY_RULES, ACCOUNT_PROTOCOL } from "@account.tech/core/types";
 import * as commands from "@account.tech/core/lib/commands";
 import { AccountSDK } from "@account.tech/core/sdk";
 import { Profile } from "@account.tech/core/lib/user";
@@ -23,6 +23,7 @@ import { ConfigDaoIntent } from "./lib/intents";
 import { DaoData, DaoMetadata, DepStatus, IntentStatus, VoteIntentArgs } from "./lib/types";
 import { Participant } from "./lib/user";
 import { Registry } from "./lib/registry";
+import { RawTransactionArgument } from "./packages/utils";
 
 export class DaoClient extends AccountSDK {
 	registry?: Registry
@@ -51,7 +52,7 @@ export class DaoClient extends AccountSDK {
 					UpdateMetadataIntent, DisableRulesIntent, MintAndTransferIntent, MintAndVestIntent, WithdrawAndBurnIntent,
 					TakeNftsIntent, ListNftsIntent,
 					UpgradePackageIntent, RestrictPolicyIntent,
-					WithdrawAndTransferToVaultIntent, WithdrawAndTransferIntent, WithdrawAndVestIntent,
+					WithdrawAndTransferToVaultIntent, WithdrawCoinAndTransferIntent, WithdrawObjectsAndTransferIntent, WithdrawAndVestIntent,
 					SpendAndTransferIntent, SpendAndVestIntent,
 					ConfigDepsIntent, ToggleUnverifiedAllowedIntent,
 					ConfigDaoIntent,
@@ -114,8 +115,8 @@ export class DaoClient extends AccountSDK {
 		website: string,
 	) {
 		// create the user if the user doesn't have one
-		let userId: TransactionPureInput = this.user.id;
-		let createdUser: TransactionPureInput | null = null;
+		let userId: RawTransactionArgument<string> = this.user.id;
+		let createdUser: RawTransactionArgument<string> | null = null;
 		if (userId === "") {
 			createdUser = this.user.createUser(tx);
 			userId = tx.moveCall({
@@ -168,28 +169,18 @@ export class DaoClient extends AccountSDK {
 	execute(
 		tx: Transaction,
 		intentKey: string
-	): TransactionResult | void {
+	) {
 		const intent = this.intents?.intents[intentKey];
 		if (!intent) throw new Error("Intent not found");
-		// not optimal, but we need to get the object types to execute the intent
-		// @ts-ignore: Property "type" exists on the constructor for Intent subclasses
-		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndTransfer) {
-			(intent as WithdrawAndTransferIntent).initTypeById(this.ownedObjects!);
-		}
-		// @ts-ignore: Property "type" exists on the constructor for Intent subclasses
-		if (intent.constructor.type === ActionsIntentTypes.WithdrawAndVest) {
-			(intent as WithdrawAndVestIntent).initTypeById(this.ownedObjects!);
-		}
 
 		const executable = this.dao.executeVotesIntent(tx, intentKey);
+		intent.execute(tx, DAO_GENERICS, executable);
 
-		let result = intent.execute(tx, DAO_GENERICS, executable);
 		intent.completeExecution(tx, DAO_GENERICS, executable);
 		// if no more executions scheduled after this one, destroy intent
 		if (intent.fields.executionTimes.length == 1) {
-			result = intent.clearEmpty(tx, DAO_GENERICS, intentKey);
+			intent.clearEmpty(tx, DAO_GENERICS, intentKey);
 		}
-		return result;
 	}
 
 	/// Deletes a intent if it has expired
@@ -439,27 +430,11 @@ export class DaoClient extends AccountSDK {
 	// Commands                                                                                         //
 	//**************************************************************************************************//
 
-	/// Automatically merges and splits coins, then returns the ids of the newly created coins to be used in an intent
-	mergeAndSplit(
-		tx: Transaction,
-		coinType: string,
-		toSplit: bigint[], // amounts
-	): TransactionResult {
-		const coins = this.ownedObjects?.getCoin(coinType);
-		const availableInstances = coins?.instances.filter(instance => !this.dao.lockedObjects.includes(instance.ref.objectId));
-		if (!availableInstances || availableInstances.reduce((acc, curr) => acc + curr.amount, 0n) < toSplit.reduce((acc, curr) => acc + curr, 0n)) {
-			throw new Error("Not enough coins");
-		}
-
-		const auth = this.authenticate(tx);
-		return commands.mergeAndSplit(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, availableInstances.map(instance => instance.ref).slice(0, 500), toSplit);
-	}
-
 	/// Deposits and locks a Cap object in the Account
 	depositCap(
 		tx: Transaction,
 		capType: string,
-		capObject: TransactionObjectInput,
+		capObject: RawTransactionArgument<string>,
 	) {
 		const auth = this.authenticate(tx);
 		commands.depositCap(tx, DAO_CONFIG_TYPE, capType, auth, this.dao.id, capObject);
@@ -500,7 +475,7 @@ export class DaoClient extends AccountSDK {
 	depositTreasuryCap(
 		tx: Transaction,
 		coinType: string,
-		treasuryCap: TransactionObjectInput,
+		treasuryCap: RawTransactionArgument<string>,
 	) {
 		const auth = this.authenticate(tx);
 		commands.depositTreasuryCap(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, treasuryCap);
@@ -519,8 +494,8 @@ export class DaoClient extends AccountSDK {
 	async placeInKiosk(
 		tx: Transaction,
 		nftType: string,
-		senderKiosk: TransactionObjectInput,
-		senderCap: TransactionObjectInput,
+		senderKiosk: RawTransactionArgument<string>,
+		senderCap: RawTransactionArgument<string>,
 		kioskName: string,
 		nftId: string,
 	) {
@@ -591,7 +566,7 @@ export class DaoClient extends AccountSDK {
 	depositUpgradeCap(
 		tx: Transaction,
 		packageName: string,
-		upgradeCap: TransactionObjectInput,
+		upgradeCap: RawTransactionArgument<string>,
 		timeLockDelayMs: bigint,
 	) {
 		const auth = this.authenticate(tx);
@@ -612,7 +587,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		coinType: string,
 		vaultName: string,
-		coin: TransactionObjectInput,
+		coin: RawTransactionArgument<string>,
 	) {
 		const auth = this.authenticate(tx);
 		commands.depositFromWallet(tx, DAO_CONFIG_TYPE, coinType, auth, this.dao.id, vaultName, coin);
@@ -868,13 +843,6 @@ export class DaoClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [amount]);
-		const coinId = tx.moveCall({
-			target: `${MOVE_STDLIB}::vector::swap_remove`,
-			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-			arguments: [coinIds, tx.pure.u64(0)],
-		});
-
 		WithdrawAndBurnIntent.prototype.request(
 			tx,
 			DAO_GENERICS,
@@ -882,7 +850,7 @@ export class DaoClient extends AccountSDK {
 			this.dao.id,
 			params,
 			outcome,
-			{ coinType, coinId, amount },
+			{ coinType, amount },
 		);
 	}
 
@@ -940,13 +908,6 @@ export class DaoClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]);
-		const coinId = tx.moveCall({
-			target: `${MOVE_STDLIB}::vector::swap_remove`,
-			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-			arguments: [coinIds, tx.pure.u64(0)],
-		});
-
 		WithdrawAndTransferToVaultIntent.prototype.request(
 			tx,
 			DAO_GENERICS,
@@ -954,34 +915,20 @@ export class DaoClient extends AccountSDK {
 			this.dao.id,
 			params,
 			outcome,
-			{ coinType, coinId, coinAmount, vaultName },
+			{ coinType, coinAmount, vaultName },
 		);
 	}
 
-	requestWithdrawAndTransfer(
+	requestWithdrawObjectsAndTransfer(
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
-		coins: { coinType: string, coinAmount: bigint }[],
-		objectIds: string[],
-		recipient: string,
+		transfers: { objectId: string, recipient: string }[],
 	) {
 		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		let transfers = objectIds.map(objectId => ({ objectId: tx.pure.id(objectId) as TransactionPureInput, recipient }));
-
-		coins.forEach(coin => {
-			const ids = this.mergeAndSplit(tx, coin.coinType, [coin.coinAmount]);
-			const objectId = tx.moveCall({
-				target: `${MOVE_STDLIB}::vector::swap_remove`,
-				typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-				arguments: [ids, tx.pure.u64(0)],
-			});
-			transfers.push({ objectId, recipient });
-		});
-
-		WithdrawAndTransferIntent.prototype.request(
+		WithdrawObjectsAndTransferIntent.prototype.request(
 			tx,
 			DAO_GENERICS,
 			auth,
@@ -992,53 +939,25 @@ export class DaoClient extends AccountSDK {
 		);
 	}
 
-	// optimized version of withdrawAndTransfer for airdropping objects with same type to multiple recipients
-	requestWithdrawAndAirdropObjects(
+	requestWithdrawCoinAndTransfer(
 		tx: Transaction,
 		intentArgs: VoteIntentArgs,
-		drops: { objectId: string, recipient: string }[],
+		coinType: string,
+		transfers: { amount: bigint, recipient: string }[],
 	) {
 		const auth = this.authenticate(tx);
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		WithdrawAndTransferIntent.prototype.request(
+		WithdrawCoinAndTransferIntent.prototype.request(
 			tx,
 			DAO_GENERICS,
 			auth,
 			this.dao.id,
 			params,
 			outcome,
-			{ transfers: drops },
+			{ coinType, transfers },
 		);
-	}
-
-	// optimized version of withdrawAndTransfer for airdropping coins to multiple recipients
-	requestWithdrawAndAirdropCoins(
-		tx: Transaction,
-		intentArgs: VoteIntentArgs,
-		coinType: string,
-		drops: { recipient: string, amount: bigint }[],
-	) {
-		const auth = this.authenticate(tx);
-		const params = Intent.createParams(tx, intentArgs);
-		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
-
-		const coinIds = this.mergeAndSplit(tx, coinType, drops.map(drop => drop.amount));
-		const recipients = drops.map(drop => drop.recipient);
-
-		tx.moveCall({
-			target: `${ACCOUNT_ACTIONS.V1}::owned_intents::request_withdraw_and_transfer`,
-			typeArguments: DAO_GENERICS,
-			arguments: [
-				auth,
-				tx.object(this.dao.id),
-				params,
-				outcome,
-				coinIds,
-				tx.pure.vector("address", recipients),
-			],
-		});
 	}
 
 	requestWithdrawAndVest(
@@ -1054,13 +973,6 @@ export class DaoClient extends AccountSDK {
 		const params = Intent.createParams(tx, intentArgs);
 		const outcome = this.dao.emptyVotesOutcome(tx, intentArgs.startTime, intentArgs.endTime);
 
-		const coinIds = this.mergeAndSplit(tx, coinType, [coinAmount]);
-		const coinId = tx.moveCall({
-			target: `${MOVE_STDLIB}::vector::swap_remove`,
-			typeArguments: [`${SUI_FRAMEWORK}::object::ID`],
-			arguments: [coinIds, tx.pure.u64(0)],
-		});
-
 		WithdrawAndVestIntent.prototype.request(
 			tx,
 			DAO_GENERICS,
@@ -1068,7 +980,7 @@ export class DaoClient extends AccountSDK {
 			this.dao.id,
 			params,
 			outcome,
-			{ coinId, start, end, recipient },
+			{ coinType, coinAmount, start, end, recipient },
 		);
 	}
 
@@ -1169,7 +1081,7 @@ export class DaoClient extends AccountSDK {
 		tx: Transaction,
 		caller: string,
 		intentKey: string,
-		useCap: (cap: TransactionObjectInput) => void,
+		useCap: (cap: TransactionResult) => void,
 	) {
 		const intent = this.getIntent(intentKey) as BorrowCapIntent;
 
