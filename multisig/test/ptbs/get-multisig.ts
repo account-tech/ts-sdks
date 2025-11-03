@@ -7,5 +7,5 @@ import { MULTISIG, NETWORK, testKeypair } from "./utils";
         testKeypair.toSuiAddress(),
         MULTISIG
     )
-    console.log(ms.getManagedAssets());
+    console.log(ms.getIntent("config-deps").args.deps);
 })();
